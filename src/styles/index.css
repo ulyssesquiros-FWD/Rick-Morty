@@ -1,0 +1,310 @@
+@import './variables.css';
+@import './components.css';
+
+/* =========================================================
+   BASE & RESET
+   ========================================================= */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-size: 16px;
+  scroll-behavior: smooth;
+  color-scheme: dark;
+}
+
+body {
+  font-family: var(--font-body);
+  background-color: var(--deep-space);
+  color: var(--text-primary);
+  min-height: 100vh;
+  line-height: 1.6;
+  overflow-x: hidden;
+  position: relative;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* =========================================================
+   DYNAMIC COSMIC & PORTAL BACKGROUND
+   ========================================================= */
+.app-container {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  background: 
+    radial-gradient(circle at 15% 20%, rgba(124, 58, 237, 0.18) 0%, transparent 45%),
+    radial-gradient(circle at 85% 65%, rgba(66, 245, 108, 0.15) 0%, transparent 50%),
+    radial-gradient(circle at 50% 90%, rgba(34, 211, 238, 0.12) 0%, transparent 40%),
+    linear-gradient(180deg, #050816 0%, #0b0f19 50%, #050816 100%);
+  background-attachment: fixed;
+}
+
+/* Multiverse star field */
+.app-container::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: 
+    radial-gradient(1px 1px at 25px 35px, #fff, rgba(0,0,0,0)),
+    radial-gradient(1.5px 1.5px at 120px 80px, #42F56C, rgba(0,0,0,0)),
+    radial-gradient(1px 1px at 210px 190px, #A855F7, rgba(0,0,0,0)),
+    radial-gradient(2px 2px at 340px 120px, #22D3EE, rgba(0,0,0,0)),
+    radial-gradient(1.5px 1.5px at 450px 310px, #fff, rgba(0,0,0,0)),
+    radial-gradient(1px 1px at 600px 220px, #97CE4C, rgba(0,0,0,0)),
+    radial-gradient(2px 2px at 750px 420px, #A855F7, rgba(0,0,0,0)),
+    radial-gradient(1px 1px at 890px 160px, #fff, rgba(0,0,0,0)),
+    radial-gradient(1.5px 1.5px at 980px 380px, #42F56C, rgba(0,0,0,0));
+  background-repeat: repeat;
+  background-size: 500px 500px;
+  opacity: 0.45;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Subtle grid overlay for laboratory interface feel */
+.app-container::after {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-size: 60px 60px;
+  background-image: 
+    linear-gradient(to right, rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+  pointer-events: none;
+  z-index: 0;
+}
+
+main.main-content {
+  flex: 1;
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: var(--container-max-width);
+  margin: 0 auto;
+  padding: 2rem 1.5rem 4rem;
+}
+
+/* =========================================================
+   TYPOGRAPHY
+   ========================================================= */
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-display);
+  letter-spacing: 0.04em;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.glitch-title {
+  font-family: var(--font-display);
+  text-transform: uppercase;
+  background: linear-gradient(135deg, #F8FAFC 0%, var(--portal-green) 50%, var(--cyan) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: 0 0 25px rgba(66, 245, 108, 0.35);
+}
+
+.portal-title-accent {
+  font-family: var(--font-title-accent);
+  color: var(--portal-green-bright);
+  text-shadow: 0 0 10px rgba(66, 245, 108, 0.8), 0 0 20px rgba(66, 245, 108, 0.5);
+  letter-spacing: 0.08em;
+}
+
+/* =========================================================
+   ANIMATIONS & KEYFRAMES
+   ========================================================= */
+@keyframes portalSpin {
+  0% { transform: rotate(0deg) scale(1); }
+  50% { transform: rotate(180deg) scale(1.04); }
+  100% { transform: rotate(360deg) scale(1); }
+}
+
+@keyframes portalSpinReverse {
+  0% { transform: rotate(360deg) scale(1); }
+  50% { transform: rotate(180deg) scale(0.96); }
+  100% { transform: rotate(0deg) scale(1); }
+}
+
+@keyframes energyPulse {
+  0%, 100% {
+    box-shadow: 0 0 20px rgba(66, 245, 108, 0.4), inset 0 0 20px rgba(66, 245, 108, 0.3);
+    filter: drop-shadow(0 0 12px rgba(66, 245, 108, 0.6));
+  }
+  50% {
+    box-shadow: 0 0 45px rgba(66, 245, 108, 0.8), inset 0 0 35px rgba(124, 58, 237, 0.6);
+    filter: drop-shadow(0 0 24px rgba(66, 245, 108, 0.9));
+  }
+}
+
+@keyframes floatElement {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+}
+
+@keyframes cardFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(18px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes neonFlicker {
+  0%, 19%, 21%, 23%, 25%, 54%, 56%, 100% {
+    text-shadow: 0 0 8px rgba(66, 245, 108, 0.8), 0 0 16px rgba(66, 245, 108, 0.4);
+  }
+  20%, 24%, 55% {
+    text-shadow: none;
+  }
+}
+
+/* =========================================================
+   COMMON UI ELEMENTS & UTILITIES
+   ========================================================= */
+
+/* Glowing Portal Buttons */
+.btn-portal-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  padding: 0.85rem 1.8rem;
+  font-family: var(--font-display);
+  font-size: 0.95rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #050816;
+  background: linear-gradient(135deg, var(--portal-green) 0%, var(--rick-green) 100%);
+  border: 1px solid var(--portal-green-bright);
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  text-decoration: none;
+  box-shadow: var(--glow-green);
+  transition: var(--transition-normal);
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-portal-primary::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+  transition: 0.5s;
+}
+
+.btn-portal-primary:hover {
+  transform: translateY(-3px) scale(1.02);
+  box-shadow: var(--glow-green-intense);
+  background: linear-gradient(135deg, #53f87a 0%, #a4dc59 100%);
+}
+
+.btn-portal-primary:hover::before {
+  left: 100%;
+}
+
+.btn-portal-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  padding: 0.85rem 1.8rem;
+  font-family: var(--font-display);
+  font-size: 0.95rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-primary);
+  background: rgba(17, 24, 39, 0.8);
+  border: 1px solid var(--border-purple);
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  text-decoration: none;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+  transition: var(--transition-normal);
+  backdrop-filter: blur(10px);
+}
+
+.btn-portal-secondary:hover {
+  border-color: var(--neon-purple);
+  color: var(--cyan);
+  transform: translateY(-3px);
+  box-shadow: var(--glow-purple);
+}
+
+.btn-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: rgba(17, 24, 39, 0.8);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: var(--transition-normal);
+}
+
+.btn-icon:hover {
+  border-color: var(--portal-green);
+  color: var(--portal-green);
+  box-shadow: var(--glow-green);
+  transform: scale(1.1);
+}
+
+/* Glassmorphic Panels */
+.glass-panel {
+  background: var(--space-card);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid var(--border-portal);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-card);
+}
+
+/* Badge tags */
+.tech-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.25rem 0.75rem;
+  border-radius: var(--radius-full);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  background: rgba(124, 58, 237, 0.15);
+  color: #C084FC;
+  border: 1px solid rgba(168, 85, 247, 0.3);
+}
+
+/* =========================================================
+   ACCESSIBILITY
+   ========================================================= */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

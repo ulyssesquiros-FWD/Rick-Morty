@@ -1,0 +1,54 @@
+:root {
+  /* Color Palette - Rick & Morty Sci-Fi Multiverse */
+  --rick-green: #97CE4C;
+  --portal-green: #42F56C;
+  --portal-green-bright: #39ff14;
+  --deep-space: #050816;
+  --space-dark: #0b0f19;
+  --space-blue: #111827;
+  --space-card: rgba(17, 24, 39, 0.85);
+  --space-card-hover: rgba(22, 32, 54, 0.95);
+  --portal-purple: #7C3AED;
+  --neon-purple: #A855F7;
+  --cyan: #22D3EE;
+  --danger-red: #EF4444;
+  --warning-yellow: #FACC15;
+  
+  /* Text Colors */
+  --text-primary: #F8FAFC;
+  --text-secondary: #94A3B8;
+  --text-muted: #64748B;
+  --text-accent: #42F56C;
+
+  /* Borders & Shadows */
+  --border-subtle: rgba(255, 255, 255, 0.08);
+  --border-portal: rgba(66, 245, 108, 0.28);
+  --border-portal-hover: rgba(66, 245, 108, 0.85);
+  --border-purple: rgba(168, 85, 247, 0.35);
+
+  --glow-green: 0 0 20px rgba(66, 245, 108, 0.4), 0 0 40px rgba(151, 206, 76, 0.2);
+  --glow-green-intense: 0 0 25px rgba(66, 245, 108, 0.7), 0 0 50px rgba(57, 255, 20, 0.4);
+  --glow-purple: 0 0 20px rgba(168, 85, 247, 0.4), 0 0 40px rgba(124, 58, 237, 0.2);
+  --glow-cyan: 0 0 20px rgba(34, 211, 238, 0.4);
+  --shadow-card: 0 10px 30px -10px rgba(0, 0, 0, 0.8);
+  --shadow-elevated: 0 20px 40px -15px rgba(5, 8, 22, 0.9);
+
+  /* Typography */
+  --font-display: 'Orbitron', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-body: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono: 'Fira Code', monospace;
+  --font-title-accent: 'Creepster', cursive;
+
+  /* Transitions */
+  --transition-fast: 0.15s ease-in-out;
+  --transition-normal: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-bounce: 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  /* Layout */
+  --container-max-width: 1280px;
+  --radius-sm: 8px;
+  --radius-md: 14px;
+  --radius-lg: 20px;
+  --radius-full: 9999px;
+  --navbar-height: 76px;
+}
