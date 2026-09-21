@@ -64,7 +64,8 @@ export function useGameEngine({
       skillCooldown: 0,
       skillActiveTimer: 0,
       portalSwapTimer: 0,
-      blinkTimer: 0
+      blinkTimer: 0,
+      pickleRickTimer: 0
     },
     companion: {
       x: 60,
@@ -99,7 +100,11 @@ export function useGameEngine({
     levelKillsCount: 0,
     screenShake: 0,
     comboCount: 0,
-    comboTimer: 0
+    comboTimer: 0,
+    movingPlatforms: (levelConfig?.movingPlatforms || []).map((mp) => ({ ...mp })),
+    steamVents: (levelConfig?.steamVents || []).map((sv) => ({ ...sv, timer: 0 })),
+    acidHazards: (levelConfig?.acidHazards || []).map((ah) => ({ ...ah })),
+    breakableCrates: (levelConfig?.breakableCrates || []).map((bc) => ({ ...bc, maxHealth: bc.health }))
   });
 
   const animationFrameIdRef = useRef(null);
@@ -193,7 +198,24 @@ export function useGameEngine({
       return;
     }
 
-    if (p.character === 'rick') {
+    
+        if (p.pickleRickTimer > 0) {
+          soundManager.playLaser();
+          state.bullets.push({
+            x: startX,
+            y: startY,
+            vx: bulletSpeed * 1.35,
+            vy: (Math.random() - 0.5) * 0.25,
+            width: 28,
+            height: 8,
+            color: '#ef4444',
+            damage: Math.round(charConf.bulletDamage * 2.2),
+            isCritical: true,
+            isPickleLaser: true
+          });
+          createExplosion(startX, startY, '#ef4444', 8);
+          p.shootCooldown = 6;
+        } else if (p.character === 'rick') {
       // Rick: Portal Warp Dash (220px horizontal teleport with area distortion damage)
       soundManager.playSpecialSkill('rick');
       p.skillCooldown = charConf.skillCooldown;
@@ -308,14 +330,15 @@ export function useGameEngine({
     const p = gameStateRef.current.player;
     const charConf = PLAYABLE_CHARACTERS[p.character] || PLAYABLE_CHARACTERS.rick;
 
+    const jumpForce = p.pickleRickTimer > 0 ? charConf.jumpForce * 1.15 : charConf.jumpForce;
     if (p.onGround) {
-      p.vy = charConf.jumpForce;
+      p.vy = jumpForce;
       p.onGround = false;
       p.jumpCount = 1;
       soundManager.playJump(false);
     } else if (p.jumpCount === 1) {
       // DOUBLE JUMP in mid-air
-      p.vy = charConf.jumpForce * 0.94;
+      p.vy = jumpForce * 0.94;
       p.jumpCount = 2;
       soundManager.playJump(true);
 
@@ -498,7 +521,8 @@ export function useGameEngine({
       // ==========================================
       const p = state.player;
       const charConf = PLAYABLE_CHARACTERS[p.character] || PLAYABLE_CHARACTERS.rick;
-      const speedMultiplier = p.skillActiveTimer > 0 ? 1.55 : 1.0;
+      const isPickle = p.pickleRickTimer > 0;
+      const speedMultiplier = (p.skillActiveTimer > 0 ? 1.55 : 1.0) * (isPickle ? 1.45 : 1.0);
       const effectiveMoveSpeed = charConf.moveSpeed * speedMultiplier;
 
       // Cooldowns and timers
@@ -508,6 +532,7 @@ export function useGameEngine({
       if (p.skillActiveTimer > 0) p.skillActiveTimer--;
       if (p.portalSwapTimer > 0) p.portalSwapTimer--;
       if (p.recoilTimer > 0) p.recoilTimer--;
+      if (p.pickleRickTimer > 0) p.pickleRickTimer--;
       if (state.screenShake > 0) state.screenShake--;
 
       p.blinkTimer++;
@@ -552,6 +577,95 @@ export function useGameEngine({
         p.onGround = true;
         p.jumpCount = 0;
       }
+
+      
+      // Moving Platforms Physics & Collision
+      state.movingPlatforms.forEach((mp) => {
+        if (mp.axis === 'x') {
+          mp.x += mp.speed * mp.dir;
+          if (mp.x <= mp.minX) {
+            mp.x = mp.minX;
+            mp.dir = 1;
+          } else if (mp.x >= mp.maxX) {
+            mp.x = mp.maxX;
+            mp.dir = -1;
+          }
+        } else {
+          mp.y += mp.speed * mp.dir;
+          if (mp.y <= mp.minY) {
+            mp.y = mp.minY;
+            mp.dir = 1;
+          } else if (mp.y >= mp.maxY) {
+            mp.y = mp.maxY;
+            mp.dir = -1;
+          }
+        }
+
+        // Platform collision & transport
+        if (
+          p.x + p.width > mp.x &&
+          p.x < mp.x + mp.width &&
+          p.y + p.height >= mp.y &&
+          p.y + p.height <= mp.y + 16 &&
+          p.vy >= 0
+        ) {
+          p.y = mp.y - p.height;
+          p.vy = 0;
+          p.onGround = true;
+          p.jumpCount = 0;
+          if (mp.axis === 'x') {
+            p.x += mp.speed * mp.dir;
+          } else {
+            p.y += mp.speed * mp.dir;
+          }
+        }
+      });
+
+      // Steam Vents (Geothermal Catapults)
+      state.steamVents.forEach((sv) => {
+        sv.timer = (sv.timer || 0) + 1;
+        if (
+          p.x + p.width > sv.x &&
+          p.x < sv.x + sv.width &&
+          p.y + p.height >= GROUND_Y - 14
+        ) {
+          p.vy = sv.force || -17.5;
+          p.onGround = false;
+          soundManager.playSteamVent();
+          state.screenShake = 6;
+          addFloatingText('¡PROPULSIÓN GÉISER!', p.x - 14, p.y - 18, '#38bdf8');
+          for (let k = 0; k < 14; k++) {
+            state.particles.push({
+              x: sv.x + sv.width / 2 + (Math.random() - 0.5) * 20,
+              y: GROUND_Y - 4,
+              vx: (Math.random() - 0.5) * 4,
+              vy: -Math.random() * 8 - 4,
+              size: Math.random() * 6 + 3,
+              color: 'rgba(255, 255, 255, 0.7)',
+              life: 25,
+              maxLife: 25
+            });
+          }
+        }
+      });
+
+      // Toxic Acid Hazards on Ground
+      state.acidHazards.forEach((ah) => {
+        if (
+          p.invulnerableTimer === 0 &&
+          p.x + p.width > ah.x &&
+          p.x < ah.x + ah.width &&
+          p.y + p.height >= GROUND_Y - 6
+        ) {
+          p.invulnerableTimer = 50;
+          p.vy = -8.5;
+          soundManager.playPlayerHurt();
+          state.screenShake = 8;
+          onPlayerDamage(ah.damage || 25);
+          addFloatingText('¡ÁCIDO TÓXICO! -1 GOLPE', p.x - 20, p.y - 18, '#22c55e');
+          createExplosion(p.x + p.width / 2, GROUND_Y - 4, '#22c55e', 16);
+        }
+      });
 
       // Platform collision
       platforms.forEach((plat) => {
@@ -674,7 +788,8 @@ export function useGameEngine({
           worldWidth: WORLD_WIDTH,
           bossArenaX: BOSS_ARENA_X,
           progressPercent,
-          inBossArena: p.x >= BOSS_ARENA_X
+          inBossArena: p.x >= BOSS_ARENA_X,
+          pickleRickTimer: p.pickleRickTimer || 0
         });
       }
 
@@ -867,6 +982,45 @@ export function useGameEngine({
         }
       }
 
+      
+      // Check bullets hitting breakable crates
+      state.breakableCrates.forEach((bc, bcIdx) => {
+        for (let bIdx = state.bullets.length - 1; bIdx >= 0; bIdx--) {
+          const b = state.bullets[bIdx];
+          if (
+            b.x < bc.x + bc.width &&
+            b.x + b.width > bc.x &&
+            b.y < bc.y + bc.height &&
+            b.y + b.height > bc.y
+          ) {
+            state.bullets.splice(bIdx, 1);
+            bc.health--;
+            createExplosion(b.x, b.y, '#f59e0b', 8);
+            if (bc.health <= 0) {
+              soundManager.playCrateBreak();
+              createExplosion(bc.x + bc.width / 2, bc.y + bc.height / 2, '#f59e0b', 22);
+              const dropType = bc.drop || 'pickle_rick';
+              const pwConfig = POWERUP_CONFIG[dropType.toUpperCase()] || POWERUP_CONFIG.PICKLE_RICK;
+              state.powerups.push({
+                id: dropType,
+                x: bc.x + 4,
+                y: bc.y - 12,
+                vx: (Math.random() - 0.5) * 2,
+                vy: -4,
+                color: pwConfig.color,
+                icon: pwConfig.icon,
+                name: pwConfig.name,
+                life: 900,
+                hoverOffset: 0
+              });
+              addFloatingText('¡CAJA DESTRUCTIBLE!', bc.x - 20, bc.y - 16, '#facc15');
+              state.breakableCrates.splice(bcIdx, 1);
+              break;
+            }
+          }
+        }
+      });
+
       // Update Powerups
       for (let i = state.powerups.length - 1; i >= 0; i--) {
         const pw = state.powerups[i];
@@ -901,7 +1055,12 @@ export function useGameEngine({
           } else if (pw.id === 'portal_fluid') {
             p.invulnerableTimer = 360;
             if (onScoreBonus) onScoreBonus(200);
-            addFloatingText('HYPER SHIELD! (6s)', p.x, p.y - 12, '#42f56c');
+          } else if (pw.id === 'pickle_rick') {
+            p.pickleRickTimer = 600;
+            soundManager.playPickleRoar();
+            if (onScoreBonus) onScoreBonus(500);
+            addFloatingText("¡I'M PICKLE RICK! (10s)", p.x, p.y - 20, '#84cc16');
+            createExplosion(p.x + p.width / 2, p.y + p.height / 2, '#84cc16', 26);
           }
 
           state.powerups.splice(i, 1);
@@ -1511,6 +1670,27 @@ export function useGameEngine({
         drawDetailedPlatform(ctx, plat, portalColor);
       });
 
+      // Acid Hazards (Toxic Pools)
+      state.acidHazards.forEach((ah) => {
+        drawAcidHazard(ctx, ah, GROUND_Y);
+      });
+
+      // Steam Vents (Catapult Geysers)
+      state.steamVents.forEach((sv) => {
+        drawSteamVent(ctx, sv, GROUND_Y);
+      });
+
+      // Breakable Crates
+      state.breakableCrates.forEach((bc) => {
+        drawBreakableCrate(ctx, bc);
+      });
+
+      // Moving Platforms
+      state.movingPlatforms.forEach((mp) => {
+        drawMovingPlatform(ctx, mp);
+      });
+
+
       // Orbital Death Beams (Warning Telegraph & Fire Column)
       state.orbitalBeams.forEach((ob) => {
         ctx.save();
@@ -1675,7 +1855,9 @@ export function useGameEngine({
       // =========================================================
       if (p.invulnerableTimer % 6 < 3) {
         ctx.save();
-        if (p.character === 'rick') {
+        if (p.pickleRickTimer > 0) {
+          drawPickleRickExoModel(ctx, p);
+        } else if (p.character === 'rick') {
           drawPS2CelShadedRick(ctx, p);
         } else {
           drawPS2CelShadedMorty(ctx, p);
@@ -1741,10 +1923,12 @@ export function useGameEngine({
       animationFrameIdRef.current = requestAnimationFrame(updateAndRender);
     };
 
+    soundManager.startMusic(gameStateRef.current.bossSpawned ? 'boss' : 'level');
     animationFrameIdRef.current = requestAnimationFrame(updateAndRender);
 
     return () => {
       isRunning = false;
+      soundManager.stopMusic();
       if (animationFrameIdRef.current) {
         cancelAnimationFrame(animationFrameIdRef.current);
       }
@@ -1782,7 +1966,8 @@ export function useGameEngine({
         skillCooldown: 0,
         skillActiveTimer: 0,
         portalSwapTimer: 0,
-        blinkTimer: 0
+        blinkTimer: 0,
+        pickleRickTimer: 0
       },
       companion: {
         x: 60,
@@ -1817,9 +2002,13 @@ export function useGameEngine({
       levelKillsCount: 0,
       screenShake: 0,
       comboCount: 0,
-      comboTimer: 0
+      comboTimer: 0,
+      movingPlatforms: (levelConfig?.movingPlatforms || []).map((mp) => ({ ...mp })),
+      steamVents: (levelConfig?.steamVents || []).map((sv) => ({ ...sv, timer: 0 })),
+      acidHazards: (levelConfig?.acidHazards || []).map((ah) => ({ ...ah })),
+      breakableCrates: (levelConfig?.breakableCrates || []).map((bc) => ({ ...bc, maxHealth: bc.health }))
     };
-  }, [activeCharacter]);
+  }, [activeCharacter, levelConfig]);
 
   return {
     triggerAction,
@@ -3348,6 +3537,489 @@ function drawPS2CelShadedMorty(ctx, p) {
     ctx.lineTo(5, 0);
     ctx.stroke();
     ctx.restore();
+  }
+
+  ctx.restore();
+}
+
+/**
+ * =========================================================================
+ * PROCEDURAL 3D CEL-SHADED RIGGED MODEL: PICKLE RICK (RAT EXO-SUIT)
+ * - Authentic bumpy green pickle body with realistic warts and curvature
+ * - Maniacal Rick facial expression: fierce brow, bared sharp teeth, crazed eyes
+ * - Scavenged rat-bone exoskeleton harness with skull pauldrons and wire ties
+ * - Forearm-mounted AA-battery laser cannon with copper coils and red plasma emitter
+ * - Beastly articulated rat limbs with razor claws and spring jump sinews
+ * =========================================================================
+ */
+function drawPickleRickExoModel(ctx, p) {
+  const { x, y, width, height, facing, runCycle, onGround, recoilTimer } = p;
+  const vx = p.vx || 0;
+  const isMoving = Math.abs(vx) > 0.3;
+  const legCycle = onGround && isMoving ? runCycle * 1.3 : 0;
+  const now = Date.now();
+  const breathing = Math.sin(now / 180) * 1.5;
+
+  ctx.save();
+  ctx.translate(x + width / 2, y + height / 2 + breathing);
+  if (facing === 'left') {
+    ctx.scale(-1, 1);
+  }
+
+  // 1. RAT TAIL (Sinuous trailing whip behind pickle)
+  const tailWave = Math.sin(now / 140) * 6 + (isMoving ? Math.sin(legCycle) * 8 : 0);
+  ctx.strokeStyle = '#e2b3a8';
+  ctx.lineWidth = 2.4;
+  ctx.lineCap = 'round';
+  ctx.beginPath();
+  ctx.moveTo(-10, 14);
+  ctx.quadraticCurveTo(-18 + tailWave, 18, -26 + tailWave * 1.4, 12);
+  ctx.stroke();
+
+  // 2. ARTICULATED RAT HIND LEGS (Muscular Sinew & Claws)
+  const leftLegAngle = onGround ? Math.sin(legCycle) * 0.75 : -0.4;
+  const rightLegAngle = onGround ? -Math.sin(legCycle) * 0.75 : 0.45;
+
+  const drawRatLeg = (offsetX, legAngle) => {
+    ctx.save();
+    ctx.translate(offsetX, 12);
+    ctx.rotate(legAngle);
+
+    // Thigh muscle (flesh and bone)
+    ctx.fillStyle = '#b45309';
+    ctx.strokeStyle = '#451a03';
+    ctx.lineWidth = 1.2;
+    ctx.beginPath();
+    ctx.ellipse(0, 2, 4.5, 7, 0.2, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+
+    // White rat bone tibia
+    ctx.strokeStyle = '#f8fafc';
+    ctx.lineWidth = 2.2;
+    ctx.beginPath();
+    ctx.moveTo(0, 6);
+    ctx.lineTo(1, 14);
+    ctx.stroke();
+
+    // Muscle tendon wire spring
+    ctx.strokeStyle = '#b91c1c';
+    ctx.lineWidth = 1.2;
+    ctx.beginPath();
+    ctx.moveTo(-2, 4);
+    ctx.lineTo(0, 13);
+    ctx.stroke();
+
+    // 3 Sharp Rat Claws
+    ctx.fillStyle = '#0f172a';
+    ctx.beginPath();
+    ctx.moveTo(-2, 14);
+    ctx.lineTo(5, 15.5);
+    ctx.lineTo(2, 17);
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+  };
+
+  drawRatLeg(-6, leftLegAngle);
+  drawRatLeg(6, rightLegAngle);
+
+  // 3. THE ICONIC PICKLE BODY (Bumpy green curved cucumber cylinder)
+  ctx.save();
+  const pickleGrad = ctx.createRadialGradient(-3, -2, 2, 0, 0, 14);
+  pickleGrad.addColorStop(0, '#a3e635'); // Bright pickle green highlight
+  pickleGrad.addColorStop(0.4, '#65a30d'); // Medium pickle green
+  pickleGrad.addColorStop(0.8, '#3f6212'); // Deep pickle flesh
+  pickleGrad.addColorStop(1, '#14532d'); // Dark pickle shadow rim
+
+  ctx.fillStyle = pickleGrad;
+  ctx.strokeStyle = '#0f172a';
+  ctx.lineWidth = 1.8;
+
+  // Curvature of the pickle
+  ctx.beginPath();
+  ctx.ellipse(0, 0, 12, 21, 0.05, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.stroke();
+
+  // 3D Pickle Warts / Bumps scattered along skin
+  const warts = [
+    { x: -6, y: -12, r: 2 },
+    { x: 5, y: -10, r: 2.2 },
+    { x: -7, y: 3, r: 2.4 },
+    { x: 6, y: 7, r: 2.2 },
+    { x: -2, y: 13, r: 2.1 },
+    { x: 4, y: -2, r: 1.8 }
+  ];
+
+  warts.forEach((w) => {
+    ctx.fillStyle = '#365314';
+    ctx.beginPath();
+    ctx.arc(w.x, w.y, w.r, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.fillStyle = '#bef264';
+    ctx.beginPath();
+    ctx.arc(w.x - 0.5, w.y - 0.6, w.r * 0.45, 0, Math.PI * 2);
+    ctx.fill();
+  });
+  ctx.restore();
+
+  // 4. RAT EXOSKELETON HARNESS & SKULL PAULDRONS
+  // Ribcage bone strap around pickle torso
+  ctx.strokeStyle = '#f1f5f9';
+  ctx.lineWidth = 2.2;
+  ctx.beginPath();
+  ctx.moveTo(-10, 2);
+  ctx.quadraticCurveTo(0, 5, 10, 2);
+  ctx.moveTo(-9, 8);
+  ctx.quadraticCurveTo(0, 11, 9, 8);
+  ctx.stroke();
+
+  // Copper tie wires
+  ctx.strokeStyle = '#b45309';
+  ctx.lineWidth = 1.2;
+  ctx.beginPath();
+  ctx.moveTo(-10, -2);
+  ctx.lineTo(10, 6);
+  ctx.stroke();
+
+  // Left Rat Skull Shoulder Pauldron
+  ctx.fillStyle = '#f8fafc';
+  ctx.strokeStyle = '#0f172a';
+  ctx.lineWidth = 1.3;
+  ctx.beginPath();
+  ctx.ellipse(-10, -8, 5, 7, -0.3, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.stroke();
+  // Skull eye socket
+  ctx.fillStyle = '#0f172a';
+  ctx.beginPath();
+  ctx.arc(-11, -9, 1.8, 0, Math.PI * 2);
+  ctx.fill();
+
+  // 5. FOREARM BATTERY LASER CANNON (AA Battery + Red Plasma Emitter)
+  const recoilKick = recoilTimer > 0 ? -recoilTimer * 2 : 0;
+  ctx.save();
+  ctx.translate(10 + recoilKick, -3);
+
+  // Rat forearm bone
+  ctx.strokeStyle = '#f8fafc';
+  ctx.lineWidth = 2.5;
+  ctx.beginPath();
+  ctx.moveTo(-2, 0);
+  ctx.lineTo(8, 0);
+  ctx.stroke();
+
+  // AA Battery Laser Body
+  const battGrad = ctx.createLinearGradient(6, -5, 6, 5);
+  battGrad.addColorStop(0, '#f59e0b');
+  battGrad.addColorStop(0.3, '#1e293b');
+  battGrad.addColorStop(0.7, '#1e293b');
+  battGrad.addColorStop(1, '#f59e0b');
+  ctx.fillStyle = battGrad;
+  ctx.strokeStyle = '#0f172a';
+  ctx.lineWidth = 1.2;
+  ctx.beginPath();
+  ctx.roundRect(6, -4, 14, 8, 2);
+  ctx.fill();
+  ctx.stroke();
+
+  // Exposed copper wire coils
+  ctx.strokeStyle = '#b45309';
+  ctx.lineWidth = 1.2;
+  for (let c = 8; c <= 16; c += 3) {
+    ctx.beginPath();
+    ctx.moveTo(c, -4);
+    ctx.lineTo(c, 4);
+    ctx.stroke();
+  }
+
+  // Laser Diode Emitter Aperture
+  ctx.fillStyle = '#ef4444';
+  ctx.shadowColor = '#ef4444';
+  ctx.shadowBlur = 10;
+  ctx.fillRect(19, -2.5, 3, 5);
+  ctx.shadowBlur = 0;
+
+  // Red Laser Charging Sparks (When Firing)
+  if (recoilTimer > 0) {
+    ctx.strokeStyle = '#fca5a5';
+    ctx.lineWidth = 1.6;
+    ctx.beginPath();
+    ctx.moveTo(21, -4);
+    ctx.lineTo(25, -1);
+    ctx.lineTo(22, 2);
+    ctx.stroke();
+
+    ctx.fillStyle = 'rgba(239, 68, 68, 0.8)';
+    ctx.shadowColor = '#ef4444';
+    ctx.shadowBlur = 18;
+    ctx.beginPath();
+    ctx.arc(23, 0, 6, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+  }
+  ctx.restore();
+
+  // 6. RICK'S MANIACAL PICKLE FACE (Furrowed Brow, Crazy Eyes & Savage Teeth)
+  // Crazed unibrow etched into pickle skin
+  ctx.strokeStyle = '#0f172a';
+  ctx.lineWidth = 3.2;
+  ctx.beginPath();
+  ctx.moveTo(-6, -11);
+  ctx.quadraticCurveTo(0, -13.5, 6, -11);
+  ctx.stroke();
+
+  // Forehead wrinkles
+  ctx.strokeStyle = '#1e3a10';
+  ctx.lineWidth = 1.1;
+  ctx.beginPath();
+  ctx.arc(0, -14, 4, Math.PI * 0.2, Math.PI * 0.8);
+  ctx.stroke();
+
+  // Maniacal Eyes
+  const eyeL = ctx.createRadialGradient(-3.5, -7, 0.5, -3.5, -6.5, 3.2);
+  eyeL.addColorStop(0, '#ffffff');
+  eyeL.addColorStop(0.85, '#ffffff');
+  eyeL.addColorStop(1, '#e2e8f0');
+  ctx.fillStyle = eyeL;
+  ctx.strokeStyle = '#0f172a';
+  ctx.lineWidth = 1.3;
+  ctx.beginPath();
+  ctx.arc(-3.5, -6.5, 3.2, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.stroke();
+
+  const eyeR = ctx.createRadialGradient(3.5, -7, 0.5, 3.5, -6.5, 3.2);
+  eyeR.addColorStop(0, '#ffffff');
+  eyeR.addColorStop(0.85, '#ffffff');
+  eyeR.addColorStop(1, '#e2e8f0');
+  ctx.fillStyle = eyeR;
+  ctx.beginPath();
+  ctx.arc(3.5, -6.5, 3.2, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.stroke();
+
+  // Manic Pupils (Tiny dilated dots)
+  ctx.fillStyle = '#0f172a';
+  ctx.beginPath();
+  ctx.arc(-2.8, -6.5, 1.1, 0, Math.PI * 2);
+  ctx.arc(4.2, -6.5, 1.1, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Bared Teeth Savage Grimace Mouth
+  ctx.fillStyle = '#450a0a';
+  ctx.strokeStyle = '#0f172a';
+  ctx.lineWidth = 1.4;
+  ctx.beginPath();
+  ctx.roundRect(-4.5, -1.5, 9, 5, 2);
+  ctx.fill();
+  ctx.stroke();
+
+  // Sharp Clenched Teeth
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(-3.8, -1.5, 7.6, 2);
+  ctx.fillRect(-3.8, 1.5, 7.6, 2);
+
+  ctx.strokeStyle = '#0f172a';
+  ctx.lineWidth = 0.9;
+  ctx.beginPath();
+  ctx.moveTo(-1.5, -1.5);
+  ctx.lineTo(-1.5, 3.5);
+  ctx.moveTo(1.5, -1.5);
+  ctx.lineTo(1.5, 3.5);
+  ctx.stroke();
+
+  // Saliva on corner of teeth
+  ctx.fillStyle = '#bef264';
+  ctx.beginPath();
+  ctx.arc(3.8, 2, 0.9, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.restore();
+}
+
+/**
+ * =========================================================================
+ * INTERACTIVE STAGE ELEMENTS RENDERING ROUTINES
+ * Moving platforms, steam vents, acid hazards, and breakable supply crates
+ * =========================================================================
+ */
+
+function drawMovingPlatform(ctx, plat) {
+  ctx.save();
+  // Chassis body
+  const grad = ctx.createLinearGradient(plat.x, plat.y, plat.x, plat.y + plat.height);
+  grad.addColorStop(0, '#334155');
+  grad.addColorStop(0.5, '#1e293b');
+  grad.addColorStop(1, '#0f172a');
+  ctx.fillStyle = grad;
+  ctx.strokeStyle = '#38bdf8';
+  ctx.lineWidth = 1.8;
+  ctx.beginPath();
+  ctx.roundRect(plat.x, plat.y, plat.width, plat.height, 4);
+  ctx.fill();
+  ctx.stroke();
+
+  // Top Neon Energy Guide Rail
+  ctx.fillStyle = '#38bdf8';
+  ctx.shadowColor = '#38bdf8';
+  ctx.shadowBlur = 8;
+  ctx.fillRect(plat.x + 2, plat.y, plat.width - 4, 3);
+  ctx.shadowBlur = 0;
+
+  // Mechanical Gear / Piston Core
+  ctx.fillStyle = '#64748b';
+  const midX = plat.x + plat.width / 2;
+  ctx.beginPath();
+  ctx.arc(midX, plat.y + plat.height / 2, 4, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Hover Jet Flame under platform
+  const now = Date.now();
+  const jetFlicker = 4 + Math.sin(now / 50) * 2;
+  ctx.fillStyle = 'rgba(56, 189, 248, 0.75)';
+  ctx.shadowColor = '#38bdf8';
+  ctx.shadowBlur = 10;
+  ctx.beginPath();
+  ctx.moveTo(plat.x + 16, plat.y + plat.height);
+  ctx.lineTo(plat.x + 24, plat.y + plat.height + jetFlicker);
+  ctx.lineTo(plat.x + 32, plat.y + plat.height);
+  ctx.moveTo(plat.x + plat.width - 32, plat.y + plat.height);
+  ctx.lineTo(plat.x + plat.width - 24, plat.y + plat.height + jetFlicker);
+  ctx.lineTo(plat.x + plat.width - 16, plat.y + plat.height);
+  ctx.fill();
+  ctx.shadowBlur = 0;
+
+  ctx.restore();
+}
+
+function drawSteamVent(ctx, vent, groundY) {
+  ctx.save();
+  // Floor Vent Grate
+  ctx.fillStyle = '#1e293b';
+  ctx.strokeStyle = '#f59e0b';
+  ctx.lineWidth = 1.5;
+  ctx.fillRect(vent.x, groundY - 4, vent.width, 8);
+  ctx.strokeRect(vent.x, groundY - 4, vent.width, 8);
+
+  // Grate Slits
+  ctx.fillStyle = '#f59e0b';
+  for (let s = vent.x + 6; s < vent.x + vent.width - 4; s += 8) {
+    ctx.fillRect(s, groundY - 2, 3, 4);
+  }
+
+  // Animated Billowing Steam Column
+  const now = Date.now();
+  const steamHeight = 60 + Math.sin(now / 120) * 16;
+  const steamGrad = ctx.createLinearGradient(0, groundY, 0, groundY - steamHeight);
+  steamGrad.addColorStop(0, 'rgba(255, 255, 255, 0.6)');
+  steamGrad.addColorStop(0.4, 'rgba(56, 189, 248, 0.35)');
+  steamGrad.addColorStop(1, 'rgba(255, 255, 255, 0)');
+
+  ctx.fillStyle = steamGrad;
+  ctx.beginPath();
+  ctx.moveTo(vent.x + 4, groundY);
+  ctx.quadraticCurveTo(vent.x - 6, groundY - steamHeight * 0.6, vent.x + vent.width / 2, groundY - steamHeight);
+  ctx.quadraticCurveTo(vent.x + vent.width + 6, groundY - steamHeight * 0.6, vent.x + vent.width - 4, groundY);
+  ctx.closePath();
+  ctx.fill();
+
+  ctx.restore();
+}
+
+function drawAcidHazard(ctx, acid, groundY) {
+  ctx.save();
+  // Acid Pool Trench
+  ctx.fillStyle = '#064e3b';
+  ctx.fillRect(acid.x, groundY, acid.width, 18);
+
+  // Bubbling Radioactive Acid Surface
+  const now = Date.now();
+  const acidGrad = ctx.createLinearGradient(0, groundY, 0, groundY + 14);
+  acidGrad.addColorStop(0, '#4ade80');
+  acidGrad.addColorStop(0.6, '#22c55e');
+  acidGrad.addColorStop(1, '#14532d');
+
+  ctx.fillStyle = acidGrad;
+  ctx.shadowColor = '#22c55e';
+  ctx.shadowBlur = 12;
+  ctx.beginPath();
+  ctx.moveTo(acid.x, groundY + 2);
+  for (let ax = acid.x; ax <= acid.x + acid.width; ax += 14) {
+    const waveY = Math.sin((now / 150) + (ax * 0.2)) * 3;
+    ctx.lineTo(ax, groundY + 2 + waveY);
+  }
+  ctx.lineTo(acid.x + acid.width, groundY + 16);
+  ctx.lineTo(acid.x, groundY + 16);
+  ctx.closePath();
+  ctx.fill();
+  ctx.shadowBlur = 0;
+
+  // Acid Bubbles
+  const bubble1X = acid.x + 18 + Math.sin(now / 300) * 6;
+  const bubble1Y = groundY + Math.abs(Math.sin(now / 180)) * 4;
+  ctx.fillStyle = '#bbf7d0';
+  ctx.beginPath();
+  ctx.arc(bubble1X, bubble1Y, 3, 0, Math.PI * 2);
+  ctx.arc(acid.x + acid.width - 24, groundY + 2, 2.5, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Toxic Hazard Warning Stripes on Banks
+  ctx.fillStyle = '#eab308';
+  ctx.fillRect(acid.x - 6, groundY, 6, 8);
+  ctx.fillRect(acid.x + acid.width, groundY, 6, 8);
+
+  ctx.restore();
+}
+
+function drawBreakableCrate(ctx, crate) {
+  ctx.save();
+  // Crate Body (Reinforced Wooden / Metal Supply Box)
+  const grad = ctx.createLinearGradient(crate.x, crate.y, crate.x, crate.y + crate.height);
+  grad.addColorStop(0, '#b45309');
+  grad.addColorStop(0.5, '#78350f');
+  grad.addColorStop(1, '#451a03');
+  ctx.fillStyle = grad;
+  ctx.strokeStyle = '#f59e0b';
+  ctx.lineWidth = 1.8;
+  ctx.beginPath();
+  ctx.roundRect(crate.x, crate.y, crate.width, crate.height, 3);
+  ctx.fill();
+  ctx.stroke();
+
+  // Steel Corner Brackets
+  ctx.fillStyle = '#64748b';
+  ctx.fillRect(crate.x, crate.y, 6, 6);
+  ctx.fillRect(crate.x + crate.width - 6, crate.y, 6, 6);
+  ctx.fillRect(crate.x, crate.y + crate.height - 6, 6, 6);
+  ctx.fillRect(crate.x + crate.width - 6, crate.y + crate.height - 6, 6, 6);
+
+  // Cross Reinforcement Planks
+  ctx.strokeStyle = 'rgba(245, 158, 11, 0.45)';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.moveTo(crate.x + 4, crate.y + 4);
+  ctx.lineTo(crate.x + crate.width - 4, crate.y + crate.height - 4);
+  ctx.moveTo(crate.x + crate.width - 4, crate.y + 4);
+  ctx.lineTo(crate.x + 4, crate.y + crate.height - 4);
+  ctx.stroke();
+
+  // Supply Icon Badge
+  ctx.font = '14px sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  const icon = crate.drop === 'pickle_rick' ? '🥒' : crate.drop === 'mega_seed' ? '🧬' : '🧪';
+  ctx.fillText(icon, crate.x + crate.width / 2, crate.y + crate.height / 2);
+
+  // Damage health pip indicator
+  if (crate.health < crate.maxHealth) {
+    const healthPercent = Math.max(0, crate.health / crate.maxHealth);
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
+    ctx.fillRect(crate.x, crate.y - 7, crate.width, 4);
+    ctx.fillStyle = '#ef4444';
+    ctx.fillRect(crate.x, crate.y - 7, crate.width * healthPercent, 4);
   }
 
   ctx.restore();

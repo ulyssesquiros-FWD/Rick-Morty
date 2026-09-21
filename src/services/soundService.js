@@ -8,6 +8,11 @@ class SoundService {
   constructor() {
     this.ctx = null;
     this.muted = false;
+    this.bgmTimer = null;
+    this.bgmActive = false;
+    this.bgmStep = 0;
+    this.bgmTheme = 'level';
+    this.musicGain = null;
   }
 
   init() {
@@ -15,6 +20,9 @@ class SoundService {
       const AudioContext = window.AudioContext || window.webkitAudioContext;
       if (AudioContext) {
         this.ctx = new AudioContext();
+        this.musicGain = this.ctx.createGain();
+        this.musicGain.gain.setValueAtTime(this.muted ? 0 : 0.16, this.ctx.currentTime);
+        this.musicGain.connect(this.ctx.destination);
       }
     }
     if (this.ctx && this.ctx.state === 'suspended') {
@@ -24,6 +32,11 @@ class SoundService {
 
   setMuted(isMuted) {
     this.muted = isMuted;
+    if (this.musicGain && this.ctx) {
+      try {
+        this.musicGain.gain.setValueAtTime(isMuted ? 0 : 0.16, this.ctx.currentTime);
+      } catch {}
+    }
   }
 
   isMuted() {
@@ -443,6 +456,224 @@ class SoundService {
 
       osc.start(now);
       osc.stop(now + 0.3);
+    } catch {}
+  }
+
+  /**
+   * Pickle Rick transformation roar ("I'M PICKLE RICK!")
+   * Power chord with laser harmonic discharge
+   */
+  playPickleRoar() {
+    if (this.muted) return;
+    this.init();
+    if (!this.ctx) return;
+
+    try {
+      const now = this.ctx.currentTime;
+      [220, 277.18, 329.63, 440].forEach((freq, idx) => {
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(freq, now + idx * 0.04);
+        osc.frequency.exponentialRampToValueAtTime(freq * 2.2, now + 0.45);
+
+        gain.gain.setValueAtTime(0.2, now + idx * 0.04);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.6);
+
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(now + idx * 0.04);
+        osc.stop(now + 0.6);
+      });
+    } catch {}
+  }
+
+  /**
+   * Breakable crate splintering sound
+   */
+  playCrateBreak() {
+    if (this.muted) return;
+    this.init();
+    if (!this.ctx) return;
+
+    try {
+      const now = this.ctx.currentTime;
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(320, now);
+      osc.frequency.exponentialRampToValueAtTime(60, now + 0.16);
+
+      gain.gain.setValueAtTime(0.25, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.16);
+
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+      osc.start(now);
+      osc.stop(now + 0.16);
+    } catch {}
+  }
+
+  /**
+   * Geothermal steam vent catapult blast sound
+   */
+  playSteamVent() {
+    if (this.muted) return;
+    this.init();
+    if (!this.ctx) return;
+
+    try {
+      const now = this.ctx.currentTime;
+      const osc = this.ctx.createOscillator();
+      const filter = this.ctx.createBiquadFilter();
+      const gain = this.ctx.createGain();
+
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(140, now);
+      osc.frequency.exponentialRampToValueAtTime(480, now + 0.28);
+
+      filter.type = 'lowpass';
+      filter.frequency.setValueAtTime(600, now);
+      filter.frequency.linearRampToValueAtTime(1800, now + 0.2);
+
+      gain.gain.setValueAtTime(0.28, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+
+      osc.connect(filter);
+      filter.connect(gain);
+      gain.connect(this.ctx.destination);
+      osc.start(now);
+      osc.stop(now + 0.35);
+    } catch {}
+  }
+
+  /**
+   * Start dynamic procedural retro synth BGM soundtrack
+   * @param {'level' | 'boss'} theme
+   */
+  startMusic(theme = 'level') {
+    this.init();
+    if (!this.ctx) return;
+
+    if (this.bgmActive && this.bgmTheme === theme) return;
+    this.stopMusic();
+
+    this.bgmActive = true;
+    this.bgmTheme = theme;
+    this.bgmStep = 0;
+
+    const tempo = theme === 'boss' ? 160 : 132;
+    const stepIntervalMs = (60 / tempo / 4) * 1000; // 16th note steps
+
+    this.bgmTimer = setInterval(() => {
+      this._tickMusic();
+    }, stepIntervalMs);
+  }
+
+  /**
+   * Stop background soundtrack
+   */
+  stopMusic() {
+    if (this.bgmTimer) {
+      clearInterval(this.bgmTimer);
+      this.bgmTimer = null;
+    }
+    this.bgmActive = false;
+  }
+
+  /**
+   * Synthesizes 1 step of the 16-step BGM loop
+   * @private
+   */
+  _tickMusic() {
+    if (this.muted || !this.ctx || !this.bgmActive) return;
+
+    try {
+      const now = this.ctx.currentTime;
+      const step = this.bgmStep % 16;
+      const isBoss = this.bgmTheme === 'boss';
+
+      // 1. Synth Bassline
+      const bassNotesLevel = [73.42, 0, 73.42, 0, 87.31, 0, 98.00, 0, 65.41, 0, 65.41, 0, 73.42, 0, 82.41, 98.00];
+      const bassNotesBoss = [73.42, 73.42, 77.78, 77.78, 87.31, 87.31, 103.83, 103.83, 73.42, 73.42, 77.78, 77.78, 87.31, 87.31, 110.00, 103.83];
+      const bassFreq = isBoss ? bassNotesBoss[step] : bassNotesLevel[step];
+
+      if (bassFreq > 0) {
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = isBoss ? 'sawtooth' : 'triangle';
+        osc.frequency.setValueAtTime(bassFreq, now);
+
+        const dur = isBoss ? 0.11 : 0.16;
+        gain.gain.setValueAtTime(0.18, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + dur);
+
+        osc.connect(gain);
+        gain.connect(this.musicGain || this.ctx.destination);
+        osc.start(now);
+        osc.stop(now + dur);
+      }
+
+      // 2. Cosmic Synth Arpeggio / Rick & Morty Theme Motif
+      const leadNotesLevel = [293.66, 349.23, 392.00, 415.30, 440.00, 392.00, 349.23, 293.66, 261.63, 329.63, 392.00, 440.00, 523.25, 440.00, 392.00, 349.23];
+      const leadNotesBoss = [293.66, 311.13, 349.23, 370.00, 415.30, 440.00, 493.88, 523.25, 587.33, 523.25, 493.88, 440.00, 415.30, 370.00, 349.23, 311.13];
+      const leadFreq = isBoss ? leadNotesBoss[step] : leadNotesLevel[step];
+
+      if (leadFreq > 0 && (step % 2 === 0 || isBoss)) {
+        const osc = this.ctx.createOscillator();
+        const filter = this.ctx.createBiquadFilter();
+        const gain = this.ctx.createGain();
+
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(leadFreq, now);
+
+        filter.type = 'lowpass';
+        filter.frequency.setValueAtTime(isBoss ? 2400 : 1600, now);
+
+        const dur = 0.12;
+        gain.gain.setValueAtTime(0.14, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + dur);
+
+        osc.connect(filter);
+        filter.connect(gain);
+        gain.connect(this.musicGain || this.ctx.destination);
+        osc.start(now);
+        osc.stop(now + dur);
+      }
+
+      // 3. Chiptune Percussion (Kick, Snare, Hi-Hat)
+      // Kick drum on 0, 8 (and 4, 12 in Boss)
+      if (step === 0 || step === 8 || (isBoss && (step === 4 || step === 12))) {
+        const kickOsc = this.ctx.createOscillator();
+        const kickGain = this.ctx.createGain();
+        kickOsc.frequency.setValueAtTime(140, now);
+        kickOsc.frequency.exponentialRampToValueAtTime(35, now + 0.1);
+        kickGain.gain.setValueAtTime(0.25, now);
+        kickGain.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
+
+        kickOsc.connect(kickGain);
+        kickGain.connect(this.musicGain || this.ctx.destination);
+        kickOsc.start(now);
+        kickOsc.stop(now + 0.1);
+      }
+
+      // Snare on 4, 12
+      if (step === 4 || step === 12) {
+        const snareOsc = this.ctx.createOscillator();
+        const snareGain = this.ctx.createGain();
+        snareOsc.type = 'triangle';
+        snareOsc.frequency.setValueAtTime(220, now);
+        snareGain.gain.setValueAtTime(0.18, now);
+        snareGain.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
+
+        snareOsc.connect(snareGain);
+        snareGain.connect(this.musicGain || this.ctx.destination);
+        snareOsc.start(now);
+        snareOsc.stop(now + 0.12);
+      }
+
+      this.bgmStep++;
     } catch {}
   }
 }

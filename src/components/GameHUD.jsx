@@ -74,30 +74,47 @@ export default function GameHUD({
     return segments;
   };
 
+  const isPickleRick = (levelProgress.pickleRickTimer || 0) > 0;
+  const pickleSeconds = Math.ceil((levelProgress.pickleRickTimer || 0) / 60);
+
   return (
     <div className="game-hud-container" role="region" aria-label="Game HUD">
       {/* 1. Left: Active Character Card & Swap Button */}
-      <div className="hud-block hud-character-card">
+      <div className={`hud-block hud-character-card ${isPickleRick ? 'card-pickle-active' : ''}`}>
         <div
-          className="hud-char-avatar-ring"
-          style={{ borderColor: charConfig.color, boxShadow: `0 0 10px ${charConfig.glowColor}` }}
-          title={`Personaje actual: ${charConfig.name}`}
+          className={`hud-char-avatar-ring ${isPickleRick ? 'pickle-mode' : ''}`}
+          style={{
+            borderColor: isPickleRick ? '#84cc16' : charConfig.color,
+            boxShadow: `0 0 12px ${isPickleRick ? 'rgba(132, 204, 22, 0.8)' : charConfig.glowColor}`
+          }}
+          title={isPickleRick ? '¡TRANSFORMACIÓN PICKLE RICK ACTIVA!' : `Personaje actual: ${charConfig.name}`}
         >
           <span className="hud-char-icon" aria-hidden="true">
-            {activeCharacter === 'rick' ? '🧪' : '⚡'}
+            {isPickleRick ? '🥒' : activeCharacter === 'rick' ? '🧪' : '⚡'}
           </span>
         </div>
 
         <div className="hud-char-info">
           <div className="hud-char-name-row">
-            <strong style={{ color: charConfig.color }}>{charConfig.name}</strong>
-            <span className="hud-char-title">{charConfig.title}</span>
+            <strong style={{ color: isPickleRick ? '#84cc16' : charConfig.color }}>
+              {isPickleRick ? 'PICKLE RICK' : charConfig.name}
+            </strong>
+            <span className="hud-char-title">
+              {isPickleRick ? 'Exoesqueleto Rata' : charConfig.title}
+            </span>
           </div>
 
-          <div className="hud-skill-badge" title={charConfig.skillDesc}>
-            <span className="hud-key-tag">[E]</span>
-            <span className="hud-skill-name">{charConfig.skillName}</span>
-          </div>
+          {isPickleRick ? (
+            <div className="hud-pickle-badge" title="Hiper-velocidad y Ráfagas Láser de Batería">
+              <span className="pickle-flame">🔥</span>
+              <span className="pickle-text">¡PICKLE RICK! ({pickleSeconds}s)</span>
+            </div>
+          ) : (
+            <div className="hud-skill-badge" title={charConfig.skillDesc}>
+              <span className="hud-key-tag">[E]</span>
+              <span className="hud-skill-name">{charConfig.skillName}</span>
+            </div>
+          )}
         </div>
 
         <button

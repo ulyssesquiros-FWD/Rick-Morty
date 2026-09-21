@@ -798,3 +798,58 @@
     justify-content: center;
   }
 }
+
+/* Pickle Rick Transformation HUD Styling */
+.card-pickle-active {
+  border-color: #84cc16 !important;
+  box-shadow: 0 0 16px rgba(132, 204, 22, 0.45) !important;
+  background: rgba(20, 83, 45, 0.4) !important;
+  animation: picklePulse 1s infinite alternate ease-in-out;
+}
+
+@keyframes picklePulse {
+  from {
+    box-shadow: 0 0 12px rgba(132, 204, 22, 0.4);
+  }
+  to {
+    box-shadow: 0 0 22px rgba(132, 204, 22, 0.85);
+  }
+}
+
+.pickle-mode {
+  animation: pickleRotate 4s infinite linear;
+}
+
+@keyframes pickleRotate {
+  0% { transform: rotate(0deg); }
+  25% { transform: rotate(-6deg); }
+  75% { transform: rotate(6deg); }
+  100% { transform: rotate(0deg); }
+}
+
+.hud-pickle-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: linear-gradient(135deg, rgba(20, 83, 45, 0.9), rgba(101, 163, 13, 0.9));
+  border: 1px solid #84cc16;
+  border-radius: 4px;
+  padding: 0.15rem 0.5rem;
+  box-shadow: 0 0 10px rgba(132, 204, 22, 0.6);
+  animation: pickleBadgeGlow 0.8s infinite alternate ease-in-out;
+}
+
+.hud-pickle-badge .pickle-text {
+  font-family: var(--font-display);
+  font-size: 0.65rem;
+  font-weight: 800;
+  color: #f7fee7;
+  letter-spacing: 0.05em;
+  text-shadow: 0 0 6px #84cc16;
+}
+
+@keyframes pickleBadgeGlow {
+  from { filter: brightness(1); }
+  to { filter: brightness(1.3); }
+}
+

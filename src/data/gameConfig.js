@@ -50,6 +50,24 @@ export const LEVELS = [
       // Boss Arena Platforms
       { x: 2550, y: 320, width: 160, height: 16 },
       { x: 2800, y: 260, width: 180, height: 16 }
+    ],
+    movingPlatforms: [
+      { x: 480, y: 270, width: 130, height: 14, axis: 'x', minX: 430, maxX: 580, speed: 1.6, dir: 1 },
+      { x: 1750, y: 300, width: 140, height: 14, axis: 'y', minY: 220, maxY: 340, speed: 1.4, dir: 1 }
+    ],
+    steamVents: [
+      { x: 540, width: 44, force: -17.5 },
+      { x: 1260, width: 44, force: -17.5 },
+      { x: 2040, width: 44, force: -17.5 }
+    ],
+    acidHazards: [
+      { x: 740, width: 110, damage: 25 },
+      { x: 1500, width: 110, damage: 25 }
+    ],
+    breakableCrates: [
+      { x: 670, y: 200, width: 34, height: 34, health: 3, drop: 'pickle_rick' },
+      { x: 1670, y: 180, width: 34, height: 34, health: 3, drop: 'flask' },
+      { x: 2210, y: 315, width: 34, height: 34, health: 3, drop: 'pickle_rick' }
     ]
   },
   {
@@ -87,6 +105,24 @@ export const LEVELS = [
       // Boss Arena Platforms
       { x: 2560, y: 310, width: 170, height: 16 },
       { x: 2820, y: 240, width: 200, height: 16 }
+    ],
+    movingPlatforms: [
+      { x: 700, y: 260, width: 140, height: 14, axis: 'x', minX: 640, maxX: 800, speed: 2.0, dir: 1 },
+      { x: 1720, y: 280, width: 140, height: 14, axis: 'y', minY: 190, maxY: 330, speed: 1.8, dir: 1 }
+    ],
+    steamVents: [
+      { x: 500, width: 44, force: -17.5 },
+      { x: 1440, width: 44, force: -17.5 },
+      { x: 2100, width: 44, force: -17.5 }
+    ],
+    acidHazards: [
+      { x: 680, width: 120, damage: 25 },
+      { x: 1520, width: 120, damage: 25 }
+    ],
+    breakableCrates: [
+      { x: 640, y: 190, width: 34, height: 34, health: 3, drop: 'pickle_rick' },
+      { x: 1640, y: 170, width: 34, height: 34, health: 3, drop: 'mega_seed' },
+      { x: 2240, y: 305, width: 34, height: 34, health: 3, drop: 'pickle_rick' }
     ]
   },
   {
@@ -124,6 +160,24 @@ export const LEVELS = [
       // Boss Arena Platforms
       { x: 2580, y: 320, width: 180, height: 16 },
       { x: 2850, y: 220, width: 210, height: 16 }
+    ],
+    movingPlatforms: [
+      { x: 720, y: 240, width: 140, height: 14, axis: 'x', minX: 660, maxX: 820, speed: 2.2, dir: 1 },
+      { x: 1700, y: 260, width: 140, height: 14, axis: 'y', minY: 170, maxY: 320, speed: 2.0, dir: 1 }
+    ],
+    steamVents: [
+      { x: 460, width: 44, force: -17.5 },
+      { x: 1400, width: 44, force: -17.5 },
+      { x: 2020, width: 44, force: -17.5 }
+    ],
+    acidHazards: [
+      { x: 700, width: 130, damage: 25 },
+      { x: 1460, width: 130, damage: 25 }
+    ],
+    breakableCrates: [
+      { x: 620, y: 160, width: 34, height: 34, health: 3, drop: 'pickle_rick' },
+      { x: 1620, y: 150, width: 34, height: 34, health: 3, drop: 'portal_fluid' },
+      { x: 2220, y: 310, width: 34, height: 34, health: 3, drop: 'pickle_rick' }
     ]
   }
 ];
@@ -199,11 +253,11 @@ export const POWERUP_CONFIG = {
   FLASK: {
     id: 'flask',
     name: "Rick's Flask",
-    label: '+30 HP',
+    label: '+25 HP',
     color: '#38bdf8',
     icon: '🧪',
     duration: 0,
-    heal: 30,
+    heal: 25,
     score: 150
   },
   MEGA_SEED: {
@@ -225,6 +279,18 @@ export const POWERUP_CONFIG = {
     duration: 360, // 6 segundos
     invulnerable: true,
     score: 200
+  },
+  PICKLE_RICK: {
+    id: 'pickle_rick',
+    name: 'Pickle Serum',
+    label: "I'M PICKLE RICK!",
+    color: '#84cc16',
+    icon: '🥒',
+    duration: 600, // 10 segundos de frenesí Pickle Rick
+    pickleTransformation: true,
+    speedMultiplier: 1.45,
+    damageMultiplier: 2.2,
+    score: 500
   }
 };
 
