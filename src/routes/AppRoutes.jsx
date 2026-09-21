@@ -1,21 +1,21 @@
 import { Routes, Route } from 'react-router-dom';
 import Home from '../pages/Home';
-import Characters from '../pages/Characters';
-import CharacterDetailPage from '../pages/CharacterDetailPage';
-import Favorites from '../pages/Favorites';
+import Levels from '../pages/Levels';
+import Game from '../pages/Game';
+import LeaderboardPage from '../pages/LeaderboardPage';
 import NotFound from '../pages/NotFound';
 
 /**
  * AppRoutes Component
- * Centralizes all application route definitions with React Router v6+.
+ * Centralizes all React Router route definitions for Dimension Raid.
  */
 export default function AppRoutes() {
   return (
     <Routes>
       <Route path="/" element={<Home />} />
-      <Route path="/personajes" element={<Characters />} />
-      <Route path="/personajes/:id" element={<CharacterDetailPage />} />
-      <Route path="/favoritos" element={<Favorites />} />
+      <Route path="/niveles" element={<Levels />} />
+      <Route path="/nivel/:num" element={<Game />} />
+      <Route path="/leaderboard" element={<LeaderboardPage />} />
       <Route path="*" element={<NotFound />} />
     </Routes>
   );

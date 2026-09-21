@@ -1,6 +1,6 @@
 /**
  * Footer Component
- * Minimal and sci-fi themed footer with academic attribution.
+ * Minimal sci-fi themed footer with academic attribution.
  */
 export default function Footer() {
   const currentYear = new Date().getFullYear();
@@ -9,10 +9,10 @@ export default function Footer() {
     <footer className="app-footer">
       <div className="footer-container">
         <p className="footer-brand">
-          RICK <span>&</span> MORTY MULTIVERSE EXPLORER
+          RICK &amp; MORTY: <span>DIMENSION RAID</span>
         </p>
         <p className="footer-text">
-          Academic Laboratory &bull; Powered by React, React Router &amp; Rick and Morty API &bull; {currentYear}
+          Quiz #5 &bull; Videojuego 2D con React, Rick &amp; Morty API, json-server y automatización n8n &bull; {currentYear}
         </p>
       </div>
     </footer>

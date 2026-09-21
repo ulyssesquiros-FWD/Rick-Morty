@@ -1,17 +1,17 @@
 import { BrowserRouter } from 'react-router-dom';
-import { FavoritesProvider } from './context/FavoritesContext';
+import { GameProvider } from './context/GameContext';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import AppRoutes from './routes/AppRoutes';
 
 /**
  * App Component
- * Core application wrapper with router, state providers and global layout shell.
+ * Core application wrapper with router, game state provider and layout shell.
  */
 function App() {
   return (
     <BrowserRouter>
-      <FavoritesProvider>
+      <GameProvider>
         <div className="app-container">
           <Navbar />
           <main className="main-content">
@@ -19,7 +19,7 @@ function App() {
           </main>
           <Footer />
         </div>
-      </FavoritesProvider>
+      </GameProvider>
     </BrowserRouter>
   );
 }

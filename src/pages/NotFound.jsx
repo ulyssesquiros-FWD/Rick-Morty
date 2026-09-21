@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 
 /**
  * NotFound Page (404 / *)
- * Displays a dimensional lost state with options to return to safety.
+ * Displays a dimensional rift when navigating to undefined routes.
  */
 export default function NotFound() {
   return (
@@ -28,20 +28,20 @@ export default function NotFound() {
       </h1>
 
       <h2 style={{ color: 'var(--portal-green-bright)', fontSize: '1.4rem', marginBottom: '1.2rem', fontFamily: 'var(--font-display)' }}>
-        LOST IN UNCHARTED REALITY
+        DIMENSIÓN NO ENCONTRADA
       </h2>
 
       <p style={{ color: 'var(--text-secondary)', maxWidth: '520px', margin: '0 auto 2.5rem', lineHeight: 1.6 }}>
-        The dimensional coordinates you entered collapsed into a micro-singularity. No timeline exists at this URL path.
+        Las coordenadas ingresadas colapsaron en un agujero negro. No existe ningún sector de juego en esta ruta.
       </p>
 
       <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
         <Link to="/" className="btn-portal-primary">
           <span aria-hidden="true">⚛</span>
-          <span>RETURN TO EARTH C-137</span>
+          <span>VOLVER AL CUARTEL GENERAL</span>
         </Link>
-        <Link to="/personajes" className="btn-portal-secondary">
-          <span>BROWSE CHARACTER DATABASE</span>
+        <Link to="/niveles" className="btn-portal-secondary">
+          <span>VER NIVELES DISPONIBLES</span>
         </Link>
       </div>
     </div>

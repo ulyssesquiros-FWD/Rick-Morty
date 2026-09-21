@@ -1,13 +1,12 @@
 import { useState } from 'react';
 import { NavLink, Link } from 'react-router-dom';
-import { useFavorites } from '../context/FavoritesContext';
+import { useGame } from '../context/GameContext';
 
 /**
- * Navbar Component
- * Navigation bar with glassmorphism, responsive menu, and live favorite counter.
+ * Navbar Component for Dimension Raid
  */
 export default function Navbar() {
-  const { favoriteCount } = useFavorites();
+  const { playerName } = useGame();
   const [mobileOpen, setMobileOpen] = useState(false);
 
   const toggleMobile = () => setMobileOpen((prev) => !prev);
@@ -16,19 +15,27 @@ export default function Navbar() {
   return (
     <header className="navbar">
       <div className="navbar-container">
-        <Link to="/" className="navbar-brand" onClick={closeMobile} aria-label="Rick and Morty Multiverse Explorer Home">
+        <Link to="/" className="navbar-brand" onClick={closeMobile} aria-label="Dimension Raid Home">
           <div className="brand-portal-icon" aria-hidden="true">
             <div className="brand-portal-icon-inner"></div>
           </div>
           <div className="brand-text">
             <span className="brand-title">
-              RICK <span>&</span> MORTY
+              RICK &amp; MORTY: <span>DIMENSION RAID</span>
             </span>
-            <span className="brand-subtitle">MULTIVERSE EXPLORER</span>
+            <span className="brand-subtitle">2D ACTION ARCADE</span>
           </div>
         </Link>
 
-        {/* Desktop and Mobile Navigation Links */}
+        {/* Current Agent Badge */}
+        {playerName && (
+          <div className="nav-agent-badge" title="Agente interdimensional activo">
+            <span className="agent-dot" aria-hidden="true"></span>
+            <span className="agent-text">AGENTE: <strong>{playerName}</strong></span>
+          </div>
+        )}
+
+        {/* Navigation Links */}
         <nav
           className={`navbar-links-wrapper ${mobileOpen ? 'mobile-active' : ''}`}
           aria-label="Main Navigation"
@@ -46,31 +53,35 @@ export default function Navbar() {
             </li>
             <li>
               <NavLink
-                to="/personajes"
+                to="/niveles"
                 className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
                 onClick={closeMobile}
               >
-                CHARACTERS
+                NIVELES
               </NavLink>
             </li>
             <li>
               <NavLink
-                to="/favoritos"
+                to="/nivel/1"
                 className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
                 onClick={closeMobile}
               >
-                <span>FAVORITES</span>
-                {favoriteCount > 0 && (
-                  <span className="fav-counter-badge" aria-label={`${favoriteCount} favorites saved`}>
-                    {favoriteCount}
-                  </span>
-                )}
+                JUGAR
+              </NavLink>
+            </li>
+            <li>
+              <NavLink
+                to="/leaderboard"
+                className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
+                onClick={closeMobile}
+              >
+                LEADERBOARD
               </NavLink>
             </li>
           </ul>
         </nav>
 
-        {/* Mobile menu trigger */}
+        {/* Mobile menu button */}
         <button
           type="button"
           className="mobile-menu-btn"
