@@ -1,0 +1,135 @@
+/* =========================================================
+   HOME PAGE STYLES (DIMENSION RAID ARCADE)
+   ========================================================= */
+.arcade-hero-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 3rem 1rem 3.5rem;
+  position: relative;
+}
+
+.hero-game-title {
+  font-size: clamp(2.4rem, 6vw, 4.4rem);
+  font-weight: 900;
+  line-height: 1.1;
+  text-transform: uppercase;
+  margin-bottom: 0.85rem;
+}
+
+.hero-game-subtitle {
+  font-family: var(--font-body);
+  font-size: clamp(1.1rem, 2.5vw, 1.4rem);
+  color: var(--cyan);
+  font-style: italic;
+  letter-spacing: 0.05em;
+  margin-bottom: 2rem;
+  max-width: 680px;
+}
+
+/* Player Name Entry Form */
+.player-entry-card {
+  background: rgba(17, 24, 39, 0.85);
+  border: 2px solid var(--border-portal);
+  border-radius: var(--radius-lg);
+  padding: 1.8rem 2rem;
+  max-width: 640px;
+  width: 100%;
+  box-shadow: var(--shadow-card), var(--glow-green);
+  backdrop-filter: blur(12px);
+  margin-bottom: 2rem;
+  z-index: 5;
+}
+
+.agent-input-label {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--portal-green-bright);
+  letter-spacing: 0.1em;
+  margin-bottom: 0.85rem;
+  text-align: left;
+}
+
+.agent-input-group {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.agent-text-input {
+  flex: 1;
+  min-width: 220px;
+  background: rgba(5, 8, 22, 0.9);
+  border: 1px solid var(--border-portal);
+  border-radius: var(--radius-full);
+  padding: 0.85rem 1.4rem;
+  color: #fff;
+  font-family: var(--font-body);
+  font-size: 1rem;
+  outline: none;
+  transition: var(--transition-normal);
+}
+
+.agent-text-input:focus {
+  border-color: var(--portal-green-bright);
+  box-shadow: var(--glow-green);
+}
+
+.input-error-msg {
+  color: var(--danger-red);
+  font-size: 0.85rem;
+  font-family: var(--font-mono);
+  margin-top: 0.6rem;
+  text-align: left;
+}
+
+.hero-nav-buttons {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  justify-content: center;
+  z-index: 5;
+}
+
+/* Briefing & Intelligence Section */
+.briefing-section {
+  margin-top: 4rem;
+  padding-top: 3rem;
+  border-top: 1px solid var(--border-portal);
+}
+
+.section-header {
+  text-align: center;
+  margin-bottom: 2.5rem;
+}
+
+.section-sub-title {
+  font-family: var(--font-display);
+  font-size: 1.3rem;
+  color: var(--portal-green);
+  letter-spacing: 0.05em;
+  margin: 2.5rem 0 1.25rem;
+  text-align: center;
+}
+
+.briefing-grid-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 1.75rem;
+  margin-bottom: 2.5rem;
+}
+
+.enemies-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 1.5rem;
+}
+
+.character-cards-roster {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 1.5rem;
+}
