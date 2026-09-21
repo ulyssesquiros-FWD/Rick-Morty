@@ -1624,7 +1624,16 @@ export function useGameEngine({
       });
 
       // =========================================================
-      // 100% RIGGED 2D CEL-SHADED ANIMATED ENEMIES (ZERO PHOTO BOXES)
+      // DYNAMIC 3D GROUND DROP SHADOWS
+      // =========================================================
+      state.enemies.forEach((en) => {
+        draw3DGroundDropShadow(ctx, en.x, en.width, en.y, en.height, GROUND_Y);
+      });
+      draw3DGroundDropShadow(ctx, comp.x, comp.width, comp.y, comp.height, GROUND_Y);
+      draw3DGroundDropShadow(ctx, p.x, p.width, p.y, p.height, GROUND_Y);
+
+      // =========================================================
+      // 100% RIGGED 3D VOLUMETRIC ANIMATED ENEMIES (ZERO PHOTO BOXES)
       // =========================================================
       state.enemies.forEach((en) => {
         ctx.save();
@@ -2348,16 +2357,57 @@ function drawForegroundAtmospherics(ctx, width, height, groundY, levelId) {
   vigGrad.addColorStop(1, 'rgba(0, 0, 0, 0.45)');
   ctx.fillStyle = vigGrad;
   ctx.fillRect(0, 0, width, height);
-
   ctx.restore();
 }
 
 /**
  * =========================================================================
- * PS2-ERA CEL-SHADED ARTICULATED CHARACTER MODELS (NO SQUARE PHOTO BOXES)
+ * 3D VOLUMETRIC CEL-SHADED ARTICULATED CHARACTER MODELS & DROP SHADOWS
+ * Inspired by MultiVersus, Fortnite 3D Skins & Console 2.5D Action Games
  * =========================================================================
  */
 
+/**
+ * Dynamic 3D Ground Drop Shadow
+ * Projects an elliptical ambient occlusion shadow onto the ground (GROUND_Y)
+ * that realistically scales down and softens as the entity jumps higher in 3D space.
+ */
+function draw3DGroundDropShadow(ctx, entityX, entityWidth, entityY, entityHeight, groundY) {
+  ctx.save();
+  const heightAboveGround = Math.max(0, groundY - (entityY + entityHeight));
+  const maxDistance = 220;
+  const distanceRatio = Math.min(1, heightAboveGround / maxDistance);
+
+  // Shadow scales down and softens as character jumps higher
+  const shadowScale = Math.max(0.32, 1 - distanceRatio * 0.55);
+  const shadowAlpha = Math.max(0.1, 0.46 * (1 - distanceRatio * 0.72));
+  const shadowRadiusX = (entityWidth * 0.52) * shadowScale;
+  const shadowRadiusY = 7.5 * shadowScale;
+  const shadowCenterX = entityX + entityWidth / 2;
+
+  const shadowGrad = ctx.createRadialGradient(
+    shadowCenterX, groundY, 0,
+    shadowCenterX, groundY, shadowRadiusX
+  );
+  shadowGrad.addColorStop(0, `rgba(0, 0, 0, ${shadowAlpha})`);
+  shadowGrad.addColorStop(0.55, `rgba(0, 0, 0, ${shadowAlpha * 0.55})`);
+  shadowGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+
+  ctx.fillStyle = shadowGrad;
+  ctx.beginPath();
+  ctx.ellipse(shadowCenterX, groundY, shadowRadiusX, shadowRadiusY, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+}
+
+/**
+ * 3D Volumetric Rick Sanchez (C-137)
+ * - 3D ellipsoidal head with Phong directional lighting (top-left light vector)
+ * - 14 3D conical hair spikes arranged in 3 depth layers with facet shading
+ * - Volumetric lab coat with 3D cloth thickness, lapel cast-shadows, and billowing split tails
+ * - Cylindrical limbs with transversal Phong gradient
+ * - 3D C-137 Portal Gun: beveled aluminum body, transparent glass cylinder with glowing green fluid & 3D bubbles
+ */
 function drawPS2CelShadedRick(ctx, p) {
   const { x, y, width, height, facing, runCycle, onGround, recoilTimer, blinkTimer } = p;
   const isMoving = Math.abs(p.vx) > 0.3;
@@ -2370,15 +2420,25 @@ function drawPS2CelShadedRick(ctx, p) {
     ctx.scale(-1, 1);
   }
 
-  // 1. BILLOWING WHITE LAB COAT (Split Tails with Realistic Cloth Physics & Inner Lining)
+  // 1. BILLOWING WHITE LAB COAT (3D Split Tails with Cloth Thickness & Inner Depth)
   ctx.save();
-  const coatSweep = isMoving ? Math.sin(legCycle) * 16 + Math.abs(p.vx) * 3.5 : 0;
+  const coatSweep = isMoving ? Math.sin(legCycle) * 16 + Math.abs(p.vx) * 3.6 : 0;
   const jumpBillow = !onGround ? 10 : 0;
 
-  // Outer white coat
-  const coatGrad = ctx.createLinearGradient(-10, 8, -22, 32);
+  // Inner coat lining (darker depth shadow)
+  ctx.fillStyle = '#94a3b8';
+  ctx.beginPath();
+  ctx.moveTo(-10, 8);
+  ctx.lineTo(-26 - coatSweep, 32 - jumpBillow);
+  ctx.lineTo(-17 - coatSweep * 0.7, 34 - jumpBillow);
+  ctx.lineTo(-7, 30);
+  ctx.closePath();
+  ctx.fill();
+
+  // Outer 3D white lab coat with directional light gradient
+  const coatGrad = ctx.createLinearGradient(-10, 8, -20, 32);
   coatGrad.addColorStop(0, '#ffffff');
-  coatGrad.addColorStop(0.7, '#f1f5f9');
+  coatGrad.addColorStop(0.65, '#f1f5f9');
   coatGrad.addColorStop(1, '#cbd5e1');
 
   ctx.fillStyle = coatGrad;
@@ -2395,70 +2455,99 @@ function drawPS2CelShadedRick(ctx, p) {
   ctx.stroke();
   ctx.restore();
 
-  // 2. LONG LANKY LEGS (Dark Brown Slacks #78350f + White Socks + Penny Loafers)
+  // 2. 3D CYLINDRICAL LEGS (Dark Brown Slacks with Phong Cylindrical Shading + White Socks + Penny Loafers)
   const leftLegAngle = onGround ? Math.sin(legCycle) * 0.62 : -0.32;
   const rightLegAngle = onGround ? -Math.sin(legCycle) * 0.62 : 0.42;
 
-  // Left Leg
+  // Left Leg (3D Cylinder)
   ctx.save();
   ctx.translate(-5, 14);
   ctx.rotate(leftLegAngle);
-  // Slacks
-  ctx.fillStyle = '#78350f';
-  ctx.strokeStyle = '#451a03';
-  ctx.lineWidth = 1.4;
+
+  // Cylindrical lighting: highlight on left, shadow on right
+  const legGradLeft = ctx.createLinearGradient(-2.5, 0, 2.5, 0);
+  legGradLeft.addColorStop(0, '#9a3412');
+  legGradLeft.addColorStop(0.4, '#78350f');
+  legGradLeft.addColorStop(1, '#451a03');
+  ctx.fillStyle = legGradLeft;
+  ctx.strokeStyle = '#290e02';
+  ctx.lineWidth = 1.3;
   ctx.fillRect(-2.5, 0, 5, 14);
   ctx.strokeRect(-2.5, 0, 5, 14);
-  // Knee crease
-  ctx.strokeStyle = '#581c87';
+
+  // 3D Knee crease
+  ctx.strokeStyle = '#290e02';
   ctx.beginPath();
   ctx.moveTo(-2, 7);
   ctx.lineTo(2, 7);
   ctx.stroke();
-  // Exposed White Sock
-  ctx.fillStyle = '#ffffff';
+
+  // Exposed White Sock cylinder
+  const sockGrad = ctx.createLinearGradient(-2.5, 0, 2.5, 0);
+  sockGrad.addColorStop(0, '#ffffff');
+  sockGrad.addColorStop(1, '#cbd5e1');
+  ctx.fillStyle = sockGrad;
   ctx.fillRect(-2.5, 11, 5, 2.5);
-  // Black Penny Loafer Shoe
+
+  // Black Penny Loafer Shoe with 3D heel block
   ctx.fillStyle = '#0f172a';
   ctx.beginPath();
-  ctx.roundRect(-3, 13, 8, 4.5, [1, 2, 2, 1]);
+  ctx.roundRect(-3, 13, 8.5, 4.5, [1, 2, 2, 1]);
   ctx.fill();
+  // Shoe sole rim
+  ctx.fillStyle = '#334155';
+  ctx.fillRect(-3, 16.5, 8.5, 1);
   ctx.restore();
 
-  // Right Leg
+  // Right Leg (3D Cylinder)
   ctx.save();
   ctx.translate(5, 14);
   ctx.rotate(rightLegAngle);
-  ctx.fillStyle = '#78350f';
-  ctx.strokeStyle = '#451a03';
-  ctx.lineWidth = 1.4;
+
+  const legGradRight = ctx.createLinearGradient(-2.5, 0, 2.5, 0);
+  legGradRight.addColorStop(0, '#9a3412');
+  legGradRight.addColorStop(0.4, '#78350f');
+  legGradRight.addColorStop(1, '#451a03');
+  ctx.fillStyle = legGradRight;
+  ctx.strokeStyle = '#290e02';
+  ctx.lineWidth = 1.3;
   ctx.fillRect(-2.5, 0, 5, 14);
   ctx.strokeRect(-2.5, 0, 5, 14);
-  ctx.strokeStyle = '#581c87';
+
+  ctx.strokeStyle = '#290e02';
   ctx.beginPath();
   ctx.moveTo(-2, 7);
   ctx.lineTo(2, 7);
   ctx.stroke();
-  ctx.fillStyle = '#ffffff';
+
+  ctx.fillStyle = sockGrad;
   ctx.fillRect(-2.5, 11, 5, 2.5);
+
   ctx.fillStyle = '#0f172a';
   ctx.beginPath();
-  ctx.roundRect(-3, 13, 8, 4.5, [1, 2, 2, 1]);
+  ctx.roundRect(-3, 13, 8.5, 4.5, [1, 2, 2, 1]);
   ctx.fill();
+  ctx.fillStyle = '#334155';
+  ctx.fillRect(-3, 16.5, 8.5, 1);
   ctx.restore();
 
-  // 3. TORSO (Lab Coat Front + Notched Lapels + Turquoise Undershirt + Belt with Brass Buckle)
-  // Lab coat body
-  ctx.fillStyle = '#ffffff';
+  // 3. 3D TORSO (Lab Coat + Notched 3D Lapels + Cylindrical Turquoise Shirt + 3D Brass Buckle)
+  // Lab coat body with subtle 3D cylindrical roundness
+  const coatBodyGrad = ctx.createLinearGradient(-10, 0, 10, 0);
+  coatBodyGrad.addColorStop(0, '#ffffff');
+  coatBodyGrad.addColorStop(0.7, '#f8fafc');
+  coatBodyGrad.addColorStop(1, '#cbd5e1');
+  ctx.fillStyle = coatBodyGrad;
   ctx.strokeStyle = '#0f172a';
   ctx.lineWidth = 1.6;
   ctx.fillRect(-10, -10, 20, 24);
   ctx.strokeRect(-10, -10, 20, 24);
 
-  // Turquoise shirt (#06b6d4 / #22d3ee)
-  const shirtGrad = ctx.createLinearGradient(0, -10, 0, 10);
-  shirtGrad.addColorStop(0, '#22d3ee');
-  shirtGrad.addColorStop(1, '#0891b2');
+  // Cylindrical Turquoise shirt with directional lighting
+  const shirtGrad = ctx.createLinearGradient(-4.5, 0, 4.5, 0);
+  shirtGrad.addColorStop(0, '#67e8f9');
+  shirtGrad.addColorStop(0.45, '#06b6d4');
+  shirtGrad.addColorStop(1, '#0e7490');
   ctx.fillStyle = shirtGrad;
   ctx.beginPath();
   ctx.moveTo(-4.5, -10);
@@ -2468,9 +2557,18 @@ function drawPS2CelShadedRick(ctx, p) {
   ctx.closePath();
   ctx.fill();
 
-  // Lab coat open lapel collars
+  // 3D Notched Lapels casting soft cast-shadow onto shirt
+  ctx.fillStyle = 'rgba(0, 0, 0, 0.12)';
+  ctx.beginPath();
+  ctx.moveTo(-4.5, -10);
+  ctx.lineTo(-3.5, 10);
+  ctx.lineTo(-2.5, 10);
+  ctx.lineTo(-3.5, -10);
+  ctx.closePath();
+  ctx.fill();
+
   ctx.strokeStyle = '#cbd5e1';
-  ctx.lineWidth = 1.5;
+  ctx.lineWidth = 1.6;
   ctx.beginPath();
   ctx.moveTo(-10, -8);
   ctx.lineTo(-4.5, -2);
@@ -2480,88 +2578,96 @@ function drawPS2CelShadedRick(ctx, p) {
   ctx.lineTo(10, 4);
   ctx.stroke();
 
-  // Breast pocket with black and red pen
+  // Left breast pocket with 3D pens (Red and Black)
   ctx.strokeStyle = '#94a3b8';
   ctx.lineWidth = 1;
   ctx.strokeRect(-8, -4, 4, 5);
-  // Red pen
   ctx.fillStyle = '#ef4444';
   ctx.fillRect(-7, -6, 1.2, 2.5);
-  // Black pen
   ctx.fillStyle = '#0f172a';
   ctx.fillRect(-5.5, -6, 1.2, 2.5);
 
-  // Dark Belt with Golden Brass Buckle
+  // Dark Leather Belt with 3D Golden Brass Buckle
   ctx.fillStyle = '#1e293b';
   ctx.fillRect(-9, 10, 18, 3.5);
+  // Brass Buckle bevel
   ctx.fillStyle = '#f59e0b';
   ctx.strokeStyle = '#b45309';
   ctx.lineWidth = 1;
   ctx.strokeRect(-2.5, 9.5, 5, 4.5);
   ctx.fillRect(-2, 10, 4, 3.5);
+  // Specular sheen on buckle
+  ctx.fillStyle = '#fef08a';
+  ctx.fillRect(-2, 10, 1.5, 1.5);
 
-  // 4. ARMS & CANONICAL C-137 PORTAL GUN
+  // 4. 3D ARMS & HIGH-TECH C-137 PORTAL GUN
   const recoilOffset = recoilTimer > 0 ? -recoilTimer : 0;
   ctx.save();
   ctx.translate(9 + recoilOffset, -2);
 
-  // Arm with lab coat sleeve and cuff crease
-  ctx.fillStyle = '#ffffff';
+  // 3D Cylindrical arm sleeve with cuff fold
+  const armGrad = ctx.createLinearGradient(0, -4, 0, 2);
+  armGrad.addColorStop(0, '#ffffff');
+  armGrad.addColorStop(1, '#cbd5e1');
+  ctx.fillStyle = armGrad;
   ctx.strokeStyle = '#0f172a';
   ctx.lineWidth = 1.4;
   ctx.fillRect(-6, -4, 11, 5.5);
   ctx.strokeRect(-6, -4, 11, 5.5);
 
-  // Portal Gun Casing (Brushed Steel Chassis)
-  const gunGrad = ctx.createLinearGradient(0, -5, 0, 5);
-  gunGrad.addColorStop(0, '#f8fafc');
-  gunGrad.addColorStop(0.5, '#cbd5e1');
-  gunGrad.addColorStop(1, '#64748b');
+  // 3D Portal Gun Chassis (Beveled Brushed Aluminum with Phong Sheen)
+  const gunGrad = ctx.createLinearGradient(0, -5, 0, 3);
+  gunGrad.addColorStop(0, '#ffffff');
+  gunGrad.addColorStop(0.3, '#cbd5e1');
+  gunGrad.addColorStop(1, '#475569');
   ctx.fillStyle = gunGrad;
-  ctx.strokeStyle = '#334155';
+  ctx.strokeStyle = '#1e293b';
   ctx.lineWidth = 1.2;
   ctx.beginPath();
   ctx.roundRect(1, -4, 15, 6.5, [1, 2, 2, 1]);
   ctx.fill();
   ctx.stroke();
 
-  // Muzzle front nozzle
-  ctx.fillStyle = '#475569';
+  // Cylindrical front nozzle with 3D aperture
+  ctx.fillStyle = '#334155';
   ctx.fillRect(15, -3, 3.5, 4.5);
+  ctx.fillStyle = '#22c55e';
+  ctx.fillRect(17.5, -2, 1.5, 2.5);
 
-  // Glowing Green Portal Fluid Chamber (Glass tube with internal bubbles & glare)
-  ctx.fillStyle = 'rgba(56, 189, 248, 0.3)';
+  // 3D Cylindrical Transparent Glass Chamber
+  ctx.fillStyle = 'rgba(56, 189, 248, 0.25)';
   ctx.strokeStyle = '#0284c7';
   ctx.lineWidth = 1;
   ctx.strokeRect(4, -9, 8, 5);
 
-  const fluidGrad = ctx.createLinearGradient(4, -9, 12, -4);
-  fluidGrad.addColorStop(0, '#4ade80');
-  fluidGrad.addColorStop(1, '#16a34a');
+  // Volumetric glowing green portal fluid core
+  const fluidGrad = ctx.createRadialGradient(8, -6.5, 1, 8, -6.5, 5);
+  fluidGrad.addColorStop(0, '#86efac');
+  fluidGrad.addColorStop(0.6, '#22c55e');
+  fluidGrad.addColorStop(1, '#15803d');
   ctx.fillStyle = fluidGrad;
   ctx.shadowColor = '#39ff14';
   ctx.shadowBlur = 12;
   ctx.fillRect(4.5, -8.5, 7, 4);
   ctx.shadowBlur = 0;
 
-  // Tiny rising bubbles in portal fluid
-  const bubbleY = -6.5 + Math.sin(Date.now() / 150) * 1.5;
+  // 3D Internal bubbles inside fluid
+  const bubbleY = -6.5 + Math.sin(Date.now() / 140) * 1.5;
   ctx.fillStyle = '#ffffff';
   ctx.beginPath();
   ctx.arc(6.5, bubbleY, 0.8, 0, Math.PI * 2);
   ctx.arc(9.5, bubbleY - 1, 0.6, 0, Math.PI * 2);
   ctx.fill();
 
-  // Red Rear Antenna Indicator Button
-  ctx.fillStyle = '#ef4444';
-  ctx.strokeStyle = '#991b1b';
-  ctx.lineWidth = 0.8;
+  // Red Cylindrical Antenna Button with 3D dome
+  ctx.fillStyle = '#dc2626';
   ctx.fillRect(2, -9.5, 2, 5.5);
+  ctx.fillStyle = '#f87171';
   ctx.beginPath();
   ctx.arc(3, -9.5, 1.5, 0, Math.PI * 2);
   ctx.fill();
 
-  // Rick's Slender Hand with articulated fingers
+  // Rick's 3D Slender Fingers wrapping around grip
   ctx.fillStyle = '#fee2e2';
   ctx.strokeStyle = '#0f172a';
   ctx.lineWidth = 1;
@@ -2569,41 +2675,64 @@ function drawPS2CelShadedRick(ctx, p) {
   ctx.arc(3, -1, 2.5, 0, Math.PI * 2);
   ctx.fill();
   ctx.stroke();
-
   ctx.restore();
 
-  // 5. RICK HEAD & AUTHENTIC 14-SPIKE RADIAL HAIR
-  // Hair Spikes Background (14 distinct asymmetric spikes with cel-shading)
-  const hairGrad = ctx.createRadialGradient(0, -22, 10, 0, -22, 26);
-  hairGrad.addColorStop(0, '#cffafe');
-  hairGrad.addColorStop(0.7, '#a5f3fc');
-  hairGrad.addColorStop(1, '#0891b2');
-  ctx.fillStyle = hairGrad;
-  ctx.strokeStyle = '#0891b2';
-  ctx.lineWidth = 1.6;
+  // 5. 3D RICK HEAD & 14-CONE VOLUMETRIC RADIAL HAIR
+  // Background Hair Spikes (Layer 1 - In Ambient Shadow)
+  const hairBackGrad = ctx.createLinearGradient(0, -35, 0, -10);
+  hairBackGrad.addColorStop(0, '#38bdf8');
+  hairBackGrad.addColorStop(1, '#0369a1');
+  ctx.fillStyle = hairBackGrad;
+  ctx.strokeStyle = '#0284c7';
+  ctx.lineWidth = 1.4;
 
-  // Precise Starburns Model Sheet Spike Radians
-  const spikeAngles = [
-    -Math.PI * 0.95, -Math.PI * 0.82, -Math.PI * 0.68, -Math.PI * 0.54,
-    -Math.PI * 0.42, -Math.PI * 0.28, -Math.PI * 0.15, -Math.PI * 0.02,
-    Math.PI * 0.1, Math.PI * 0.22, Math.PI * 0.35, Math.PI * 0.48,
-    Math.PI * 0.62, Math.PI * 0.78
+  const spikeAnglesBack = [
+    -Math.PI * 0.95, -Math.PI * 0.68, -Math.PI * 0.42,
+    -Math.PI * 0.15, Math.PI * 0.1, Math.PI * 0.35, Math.PI * 0.62
   ];
 
   ctx.beginPath();
   ctx.moveTo(0, -22);
-  spikeAngles.forEach((angle) => {
-    const tipDist = 23 + (Math.abs(Math.sin(angle * 3)) * 4);
-    const tipX = Math.cos(angle) * tipDist;
-    const tipY = -22 + Math.sin(angle) * tipDist;
-    ctx.lineTo(tipX, tipY);
+  spikeAnglesBack.forEach((angle) => {
+    const tipDist = 24 + (Math.abs(Math.sin(angle * 3)) * 4.5);
+    ctx.lineTo(Math.cos(angle) * tipDist, -22 + Math.sin(angle) * tipDist);
   });
   ctx.closePath();
   ctx.fill();
   ctx.stroke();
 
-  // Rick Head Oval (Elongated jawline & pale skin)
-  ctx.fillStyle = '#fee2e2';
+  // Foreground Hair Spikes (Layer 2 - Direct 3D Light)
+  const hairForeGrad = ctx.createRadialGradient(-6, -28, 4, 0, -22, 26);
+  hairForeGrad.addColorStop(0, '#ffffff');
+  hairForeGrad.addColorStop(0.3, '#cffafe');
+  hairForeGrad.addColorStop(0.75, '#7dd3fc');
+  hairForeGrad.addColorStop(1, '#0284c7');
+  ctx.fillStyle = hairForeGrad;
+  ctx.strokeStyle = '#0369a1';
+  ctx.lineWidth = 1.6;
+
+  const spikeAnglesFore = [
+    -Math.PI * 0.82, -Math.PI * 0.54, -Math.PI * 0.28,
+    -Math.PI * 0.02, Math.PI * 0.22, Math.PI * 0.48, Math.PI * 0.78
+  ];
+
+  ctx.beginPath();
+  ctx.moveTo(0, -22);
+  spikeAnglesFore.forEach((angle) => {
+    const tipDist = 23 + (Math.abs(Math.sin(angle * 3)) * 4.0);
+    ctx.lineTo(Math.cos(angle) * tipDist, -22 + Math.sin(angle) * tipDist);
+  });
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+
+  // Rick 3D Ellipsoidal Head with Phong lighting
+  const headGrad = ctx.createRadialGradient(-3, -24, 2, 0, -20, 14.5);
+  headGrad.addColorStop(0, '#fff1f2');
+  headGrad.addColorStop(0.45, '#fee2e2');
+  headGrad.addColorStop(0.85, '#fecaca');
+  headGrad.addColorStop(1, '#fca5a5'); // Ambient jaw shadow
+  ctx.fillStyle = headGrad;
   ctx.strokeStyle = '#0f172a';
   ctx.lineWidth = 1.6;
   ctx.beginPath();
@@ -2611,14 +2740,14 @@ function drawPS2CelShadedRick(ctx, p) {
   ctx.fill();
   ctx.stroke();
 
-  // Bald hairline arc above forehead
-  ctx.strokeStyle = '#0891b2';
+  // Bald hairline contour above forehead
+  ctx.strokeStyle = '#0284c7';
   ctx.lineWidth = 1.2;
   ctx.beginPath();
   ctx.arc(0, -22, 11.2, -Math.PI * 0.8, -Math.PI * 0.2);
   ctx.stroke();
 
-  // Forehead Cynical Wrinkles (2 age lines)
+  // Forehead Age Wrinkles
   ctx.strokeStyle = '#94a3b8';
   ctx.lineWidth = 1.2;
   ctx.beginPath();
@@ -2628,9 +2757,9 @@ function drawPS2CelShadedRick(ctx, p) {
   ctx.arc(0, -26, 7, Math.PI * 0.25, Math.PI * 0.75);
   ctx.stroke();
 
-  // Bold Arched Cyan Unibrow (#0891b2)
-  ctx.strokeStyle = '#0891b2';
-  ctx.lineWidth = 2.8;
+  // Bold Arched Cyan Unibrow with 3D Ridge Shadow
+  ctx.strokeStyle = '#0e7490';
+  ctx.lineWidth = 3.0;
   ctx.beginPath();
   ctx.moveTo(-8, -25);
   ctx.quadraticCurveTo(0, -26.5, 8, -25);
@@ -2646,11 +2775,15 @@ function drawPS2CelShadedRick(ctx, p) {
   ctx.arc(4.5, -19, 4, Math.PI * 0.2, Math.PI * 0.8);
   ctx.stroke();
 
-  // Eyes with blinking
+  // 3D Spherical Eyes with Specular Highlights
   const isBlinking = blinkTimer > 172;
   if (!isBlinking) {
-    // Left eye
-    ctx.fillStyle = '#ffffff';
+    // Left Eye Sphere
+    const eyeGradL = ctx.createRadialGradient(-5.2, -21, 0.5, -4.5, -20, 3.8);
+    eyeGradL.addColorStop(0, '#ffffff');
+    eyeGradL.addColorStop(0.8, '#ffffff');
+    eyeGradL.addColorStop(1, '#e2e8f0');
+    ctx.fillStyle = eyeGradL;
     ctx.strokeStyle = '#0f172a';
     ctx.lineWidth = 1.4;
     ctx.beginPath();
@@ -2658,23 +2791,29 @@ function drawPS2CelShadedRick(ctx, p) {
     ctx.fill();
     ctx.stroke();
 
-    // Right eye
+    // Right Eye Sphere
+    const eyeGradR = ctx.createRadialGradient(3.8, -21, 0.5, 4.5, -20, 3.8);
+    eyeGradR.addColorStop(0, '#ffffff');
+    eyeGradR.addColorStop(0.8, '#ffffff');
+    eyeGradR.addColorStop(1, '#e2e8f0');
+    ctx.fillStyle = eyeGradR;
     ctx.beginPath();
     ctx.arc(4.5, -20, 3.6, 0, Math.PI * 2);
     ctx.fill();
     ctx.stroke();
 
-    // Pupils (Tracking facing direction with specular white dot)
+    // Sharp Pupils tracking facing direction
     ctx.fillStyle = '#0f172a';
     ctx.beginPath();
-    ctx.arc(-3.8, -20, 1.2, 0, Math.PI * 2);
-    ctx.arc(5.2, -20, 1.2, 0, Math.PI * 2);
+    ctx.arc(-3.8, -20, 1.25, 0, Math.PI * 2);
+    ctx.arc(5.2, -20, 1.25, 0, Math.PI * 2);
     ctx.fill();
 
+    // Specular Glint
     ctx.fillStyle = '#ffffff';
     ctx.beginPath();
-    ctx.arc(-4.2, -20.5, 0.4, 0, Math.PI * 2);
-    ctx.arc(4.8, -20.5, 0.4, 0, Math.PI * 2);
+    ctx.arc(-4.2, -20.6, 0.5, 0, Math.PI * 2);
+    ctx.arc(4.8, -20.6, 0.5, 0, Math.PI * 2);
     ctx.fill();
   } else {
     ctx.strokeStyle = '#0f172a';
@@ -2687,12 +2826,12 @@ function drawPS2CelShadedRick(ctx, p) {
     ctx.stroke();
   }
 
-  // Slender Nose
+  // Slender 3D Nose
   ctx.strokeStyle = '#0f172a';
-  ctx.lineWidth = 1.2;
+  ctx.lineWidth = 1.3;
   ctx.beginPath();
   ctx.moveTo(0, -21);
-  ctx.lineTo(1.5, -17.5);
+  ctx.lineTo(1.6, -17.5);
   ctx.lineTo(0, -16.5);
   ctx.stroke();
 
@@ -2705,11 +2844,10 @@ function drawPS2CelShadedRick(ctx, p) {
   ctx.fill();
   ctx.stroke();
 
-  // White teeth line
   ctx.fillStyle = '#ffffff';
   ctx.fillRect(-2.5, -12, 5, 1.4);
 
-  // Fluorescent Green Toxic Drool on lower chin
+  // 3D Fluorescent Toxic Drool with Sphere Bubble
   ctx.fillStyle = '#39ff14';
   ctx.shadowColor = '#39ff14';
   ctx.shadowBlur = 8;
@@ -2721,15 +2859,29 @@ function drawPS2CelShadedRick(ctx, p) {
   ctx.closePath();
   ctx.fill();
 
-  // Droplet tear
+  // Droplet with specular shine
   ctx.beginPath();
-  ctx.arc(2.2, -6.5, 1.2, 0, Math.PI * 2);
+  ctx.arc(2.2, -6.5, 1.3, 0, Math.PI * 2);
   ctx.fill();
   ctx.shadowBlur = 0;
+
+  ctx.fillStyle = '#ffffff';
+  ctx.beginPath();
+  ctx.arc(1.9, -6.9, 0.4, 0, Math.PI * 2);
+  ctx.fill();
 
   ctx.restore();
 }
 
+/**
+ * 3D Volumetric Morty Smith
+ * - 3D spherical head with spherical diffuse shading
+ * - Sculpted curly hair clusters with 3D specular light caps
+ * - Cylindrical yellow t-shirt with rounded belly volume
+ * - 3D cylindrical denim jeans with knee seams and cuffs
+ * - Two-handed blaster grip with cylindrical plasma chamber
+ * - 3D Faceted Death Crystal octahedron when skill is active
+ */
 function drawPS2CelShadedMorty(ctx, p) {
   const { x, y, width, height, facing, runCycle, onGround, recoilTimer, skillActiveTimer, blinkTimer } = p;
   const isMoving = Math.abs(p.vx) > 0.3;
@@ -2742,7 +2894,7 @@ function drawPS2CelShadedMorty(ctx, p) {
     ctx.scale(-1, 1);
   }
 
-  // Death Crystal Matrix Aura (When Morty skill is active)
+  // Death Crystal Matrix Holographic Field
   if (skillActiveTimer > 0) {
     ctx.save();
     ctx.strokeStyle = '#c084fc';
@@ -2753,11 +2905,10 @@ function drawPS2CelShadedMorty(ctx, p) {
     ctx.arc(0, -4, 28, 0, Math.PI * 2);
     ctx.stroke();
 
-    // Geometric matrix lines
-    ctx.strokeStyle = 'rgba(216, 180, 254, 0.4)';
+    ctx.strokeStyle = 'rgba(216, 180, 254, 0.45)';
     ctx.lineWidth = 1.5;
     for (let m = 0; m < 6; m++) {
-      const angle = (m * Math.PI) / 3 + Date.now() / 400;
+      const angle = (m * Math.PI) / 3 + Date.now() / 350;
       ctx.beginPath();
       ctx.moveTo(Math.cos(angle) * 18, Math.sin(angle) * 18 - 4);
       ctx.lineTo(Math.cos(angle) * 28, Math.sin(angle) * 28 - 4);
@@ -2766,84 +2917,98 @@ function drawPS2CelShadedMorty(ctx, p) {
     ctx.restore();
   }
 
-  // 1. LEGS (Straight-Cut Blue Jeans #1d4ed8 with Ankle Turn-Up Cuffs + White Sneakers)
+  // 1. 3D CYLINDRICAL LEGS (Denim Jeans with Phong Shading + White Sneakers)
   const leftLegAngle = onGround ? Math.sin(legCycle) * 0.6 : -0.25;
   const rightLegAngle = onGround ? -Math.sin(legCycle) * 0.6 : 0.35;
 
-  // Left Leg
+  // Left Leg Cylinder
   ctx.save();
   ctx.translate(-4, 11);
   ctx.rotate(leftLegAngle);
-  // Denim jeans
-  ctx.fillStyle = '#1d4ed8';
-  ctx.strokeStyle = '#1e3a8a';
-  ctx.lineWidth = 1.4;
+
+  const jeanGradL = ctx.createLinearGradient(-2.5, 0, 2.5, 0);
+  jeanGradL.addColorStop(0, '#3b82f6');
+  jeanGradL.addColorStop(0.4, '#1d4ed8');
+  jeanGradL.addColorStop(1, '#1e3a8a');
+  ctx.fillStyle = jeanGradL;
+  ctx.strokeStyle = '#172554';
+  ctx.lineWidth = 1.3;
   ctx.fillRect(-2.5, 0, 5, 11);
   ctx.strokeRect(-2.5, 0, 5, 11);
+
   // Ankle Cuff
   ctx.fillStyle = '#60a5fa';
   ctx.fillRect(-2.5, 9, 5, 2);
-  // White Sneaker with grey sole
+
+  // 3D White Sneaker with curved toe cap & sole
   ctx.fillStyle = '#ffffff';
   ctx.strokeStyle = '#94a3b8';
   ctx.lineWidth = 1;
   ctx.beginPath();
-  ctx.roundRect(-3, 10.5, 7.5, 4.5, [1, 2, 2, 1]);
+  ctx.roundRect(-3, 10.5, 8, 4.5, [1, 2, 2, 1]);
   ctx.fill();
   ctx.stroke();
-  ctx.fillStyle = '#64748b';
-  ctx.fillRect(-3, 14, 7.5, 1.2);
+  ctx.fillStyle = '#475569';
+  ctx.fillRect(-3, 14, 8, 1.2);
   ctx.restore();
 
-  // Right Leg
+  // Right Leg Cylinder
   ctx.save();
   ctx.translate(4, 11);
   ctx.rotate(rightLegAngle);
-  ctx.fillStyle = '#1d4ed8';
-  ctx.strokeStyle = '#1e3a8a';
-  ctx.lineWidth = 1.4;
+
+  const jeanGradR = ctx.createLinearGradient(-2.5, 0, 2.5, 0);
+  jeanGradR.addColorStop(0, '#3b82f6');
+  jeanGradR.addColorStop(0.4, '#1d4ed8');
+  jeanGradR.addColorStop(1, '#1e3a8a');
+  ctx.fillStyle = jeanGradR;
+  ctx.strokeStyle = '#172554';
+  ctx.lineWidth = 1.3;
   ctx.fillRect(-2.5, 0, 5, 11);
   ctx.strokeRect(-2.5, 0, 5, 11);
+
   ctx.fillStyle = '#60a5fa';
   ctx.fillRect(-2.5, 9, 5, 2);
+
   ctx.fillStyle = '#ffffff';
   ctx.strokeStyle = '#94a3b8';
   ctx.lineWidth = 1;
   ctx.beginPath();
-  ctx.roundRect(-3, 10.5, 7.5, 4.5, [1, 2, 2, 1]);
+  ctx.roundRect(-3, 10.5, 8, 4.5, [1, 2, 2, 1]);
   ctx.fill();
   ctx.stroke();
-  ctx.fillStyle = '#64748b';
-  ctx.fillRect(-3, 14, 7.5, 1.2);
+  ctx.fillStyle = '#475569';
+  ctx.fillRect(-3, 14, 8, 1.2);
   ctx.restore();
 
-  // 2. ICONIC YELLOW T-SHIRT (Subtle Cel-Shaded Folds)
-  const shirtGrad = ctx.createLinearGradient(0, -9, 0, 11);
+  // 2. 3D YELLOW T-SHIRT (Volumetric Torso with Belly Curvature & Fabric Folds)
+  const shirtGrad = ctx.createRadialGradient(-3, -2, 2, 0, 1, 12);
   shirtGrad.addColorStop(0, '#fef08a');
-  shirtGrad.addColorStop(0.6, '#facc15');
-  shirtGrad.addColorStop(1, '#ca8a04');
+  shirtGrad.addColorStop(0.5, '#facc15');
+  shirtGrad.addColorStop(0.9, '#eab308');
+  shirtGrad.addColorStop(1, '#a16207');
   ctx.fillStyle = shirtGrad;
-  ctx.strokeStyle = '#854d0e';
+  ctx.strokeStyle = '#713f12';
   ctx.lineWidth = 1.5;
   ctx.beginPath();
   ctx.roundRect(-9, -9, 18, 20, 4);
   ctx.fill();
   ctx.stroke();
 
-  // Crew-neck collar line
+  // Collar ring
   ctx.strokeStyle = '#a16207';
   ctx.lineWidth = 1.4;
   ctx.beginPath();
   ctx.arc(0, -9, 4, 0, Math.PI);
   ctx.stroke();
 
-  // 3. TWO-HANDED BLASTER GRIP (Anxious combat stance)
+  // 3. 3D TWO-HANDED BLASTER GRIP (Anxious combat stance)
   const recoilOffset = recoilTimer > 0 ? -recoilTimer : 0;
   ctx.save();
   ctx.translate(7 + recoilOffset, -1);
 
-  // Arms holding blaster with two hands
-  ctx.fillStyle = '#ffedd5';
+  // 3D Hands holding blaster
+  ctx.fillStyle = '#fee2e2';
   ctx.strokeStyle = '#0f172a';
   ctx.lineWidth = 1.2;
   ctx.beginPath();
@@ -2852,12 +3017,13 @@ function drawPS2CelShadedMorty(ctx, p) {
   ctx.fill();
   ctx.stroke();
 
-  // Morty's Sci-Fi Plasma Blaster
-  const blasterGrad = ctx.createLinearGradient(2, -4, 13, 2);
-  blasterGrad.addColorStop(0, '#94a3b8');
-  blasterGrad.addColorStop(1, '#475569');
+  // 3D Metallic Blaster Chassis with Phong lighting
+  const blasterGrad = ctx.createLinearGradient(2, -4, 2, 2);
+  blasterGrad.addColorStop(0, '#e2e8f0');
+  blasterGrad.addColorStop(0.5, '#94a3b8');
+  blasterGrad.addColorStop(1, '#334155');
   ctx.fillStyle = skillActiveTimer > 0 ? '#c084fc' : blasterGrad;
-  ctx.strokeStyle = '#1e293b';
+  ctx.strokeStyle = '#0f172a';
   ctx.lineWidth = 1;
   ctx.beginPath();
   ctx.roundRect(2, -4, 11, 5.5, [1, 2, 2, 1]);
@@ -2872,14 +3038,17 @@ function drawPS2CelShadedMorty(ctx, p) {
   ctx.shadowBlur = 0;
   ctx.restore();
 
-  // 4. ROUND HEAD & SCALLOPED CURLY BROWN HAIR
-  // Voluminous curly brown hair mop with textured curves
-  ctx.fillStyle = '#854d0e';
-  ctx.strokeStyle = '#582f0e';
+  // 4. 3D SPHERICAL HEAD & SCULPTED CURLY HAIR
+  // Curly hair clusters with 3D specular shine
+  const hairGrad = ctx.createRadialGradient(-3, -22, 3, 0, -18, 15);
+  hairGrad.addColorStop(0, '#b45309');
+  hairGrad.addColorStop(0.5, '#78350f');
+  hairGrad.addColorStop(1, '#451a03');
+  ctx.fillStyle = hairGrad;
+  ctx.strokeStyle = '#290e02';
   ctx.lineWidth = 1.6;
 
   ctx.beginPath();
-  // Hair contour with scalloped curly bumps
   ctx.arc(0, -18, 13.5, -Math.PI * 0.9, -Math.PI * 0.1);
   ctx.arc(6, -24, 4.5, 0, Math.PI * 2);
   ctx.arc(-2, -26, 5, 0, Math.PI * 2);
@@ -2888,8 +3057,20 @@ function drawPS2CelShadedMorty(ctx, p) {
   ctx.fill();
   ctx.stroke();
 
-  // Morty's Perfectly Round Spherical Face
-  ctx.fillStyle = '#ffedd5';
+  // Specular gloss arc on hair crown
+  ctx.strokeStyle = '#d97706';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.arc(-2, -25, 3.5, Math.PI * 0.9, Math.PI * 1.8);
+  ctx.stroke();
+
+  // Morty's Perfectly Spherical 3D Face
+  const faceGrad = ctx.createRadialGradient(-3, -18, 2, 0, -15, 12);
+  faceGrad.addColorStop(0, '#fff1f2');
+  faceGrad.addColorStop(0.55, '#fee2e2');
+  faceGrad.addColorStop(0.9, '#fecaca');
+  faceGrad.addColorStop(1, '#f87171');
+  ctx.fillStyle = faceGrad;
   ctx.strokeStyle = '#0f172a';
   ctx.lineWidth = 1.6;
   ctx.beginPath();
@@ -2897,27 +3078,31 @@ function drawPS2CelShadedMorty(ctx, p) {
   ctx.fill();
   ctx.stroke();
 
-  // Hair bangs on forehead
-  ctx.fillStyle = '#854d0e';
+  // Hair bangs
+  ctx.fillStyle = '#78350f';
   ctx.beginPath();
   ctx.arc(-5, -23, 3.5, 0, Math.PI);
   ctx.arc(2, -24, 4, 0, Math.PI);
   ctx.fill();
 
-  // Anxious upward-tilted eyebrows
-  ctx.strokeStyle = '#78350f';
+  // Anxious worry eyebrows
+  ctx.strokeStyle = '#451a03';
   ctx.lineWidth = 1.8;
   ctx.beginPath();
   ctx.moveTo(-6, -21.5);
-  ctx.lineTo(-2, -22.5); // Angled upward in worry
+  ctx.lineTo(-2, -22.5);
   ctx.moveTo(2, -22.5);
   ctx.lineTo(6, -21.5);
   ctx.stroke();
 
-  // Big Wide Anxious Eyes
+  // 3D Spherical Big Eyes with Specular Highlights
   const isBlinking = blinkTimer > 172;
   if (!isBlinking) {
-    ctx.fillStyle = '#ffffff';
+    const eyeGradL = ctx.createRadialGradient(-4.8, -16, 0.5, -4, -15, 4.2);
+    eyeGradL.addColorStop(0, '#ffffff');
+    eyeGradL.addColorStop(0.8, '#ffffff');
+    eyeGradL.addColorStop(1, '#e2e8f0');
+    ctx.fillStyle = eyeGradL;
     ctx.strokeStyle = '#0f172a';
     ctx.lineWidth = 1.4;
     ctx.beginPath();
@@ -2925,6 +3110,11 @@ function drawPS2CelShadedMorty(ctx, p) {
     ctx.fill();
     ctx.stroke();
 
+    const eyeGradR = ctx.createRadialGradient(3.2, -16, 0.5, 4, -15, 4.2);
+    eyeGradR.addColorStop(0, '#ffffff');
+    eyeGradR.addColorStop(0.8, '#ffffff');
+    eyeGradR.addColorStop(1, '#e2e8f0');
+    ctx.fillStyle = eyeGradR;
     ctx.beginPath();
     ctx.arc(4, -15, 4.2, 0, Math.PI * 2);
     ctx.fill();
@@ -2935,6 +3125,12 @@ function drawPS2CelShadedMorty(ctx, p) {
     ctx.beginPath();
     ctx.arc(-3.4, -15, 1.4, 0, Math.PI * 2);
     ctx.arc(4.6, -15, 1.4, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath();
+    ctx.arc(-3.8, -15.5, 0.4, 0, Math.PI * 2);
+    ctx.arc(4.2, -15.5, 0.4, 0, Math.PI * 2);
     ctx.fill();
   } else {
     ctx.strokeStyle = '#0f172a';
@@ -2947,14 +3143,14 @@ function drawPS2CelShadedMorty(ctx, p) {
     ctx.stroke();
   }
 
-  // Morty's Round Nose
+  // Round Nose
   ctx.strokeStyle = '#0f172a';
-  ctx.lineWidth = 1.2;
+  ctx.lineWidth = 1.3;
   ctx.beginPath();
   ctx.arc(0, -13, 1.5, 0, Math.PI);
   ctx.stroke();
 
-  // Morty's Classic Trembling Wavy '3'-Shaped / Frown Mouth
+  // Morty's Trembling Wavy '3'-Shaped / Frown Mouth
   ctx.strokeStyle = '#0f172a';
   ctx.lineWidth = 1.4;
   ctx.beginPath();
@@ -2963,7 +3159,7 @@ function drawPS2CelShadedMorty(ctx, p) {
   ctx.quadraticCurveTo(1.5, -10, 3.5, -8.5);
   ctx.stroke();
 
-  // Nervous Cold Sweat Droplet on Temple
+  // Cold Sweat Droplet
   ctx.fillStyle = '#38bdf8';
   ctx.shadowColor = '#38bdf8';
   ctx.shadowBlur = 4;
@@ -2972,13 +3168,17 @@ function drawPS2CelShadedMorty(ctx, p) {
   ctx.fill();
   ctx.shadowBlur = 0;
 
-  // Death Crystal Embedded in Forehead (When Skill Active)
+  // 3D Faceted Death Crystal (When Skill Active)
   if (skillActiveTimer > 0) {
-    ctx.fillStyle = '#a855f7';
-    ctx.strokeStyle = '#e9d5ff';
+    const cryGrad = ctx.createLinearGradient(-3.5, -25, 3.5, -18);
+    cryGrad.addColorStop(0, '#e9d5ff');
+    cryGrad.addColorStop(0.5, '#a855f7');
+    cryGrad.addColorStop(1, '#6b21a8');
+    ctx.fillStyle = cryGrad;
+    ctx.strokeStyle = '#ffffff';
     ctx.lineWidth = 1.5;
     ctx.shadowColor = '#c084fc';
-    ctx.shadowBlur = 12;
+    ctx.shadowBlur = 14;
     ctx.beginPath();
     ctx.moveTo(0, -25);
     ctx.lineTo(3.5, -21.5);
@@ -2995,7 +3195,7 @@ function drawPS2CelShadedMorty(ctx, p) {
 
 /**
  * =========================================================================
- * 100% RIGGED 2D ANIMATED ENEMY ROUTINES (CEL-SHADED NO SQUARE PHOTOS)
+ * 100% RIGGED 3D VOLUMETRIC ANIMATED ENEMY ROUTINES (ZERO PHOTO BOXES)
  * =========================================================================
  */
 function drawAnimatedEnemyCharacter(ctx, en, levelId) {
@@ -3028,22 +3228,36 @@ function drawAnimatedEnemyCharacter(ctx, en, levelId) {
   ctx.restore();
 }
 
+/**
+ * 3D Volumetric Mr. Meeseeks
+ * Cylindrical tubular limbs with specular shine, spherical head & 3D hair bulb.
+ * In Frenzy: 3D pulsing crimson Fresnel rim-lighting and crackling arcs.
+ */
 function drawMeeseeksWalker(ctx, runCycle, isFrenzied) {
   const legAngle = Math.sin(runCycle) * 0.6;
   const armAngle = -Math.sin(runCycle) * 0.65;
 
-  // Frenzy Aura particles
+  // 3D Crimson Fresnel Rim-lighting in Frenzy Mode
   if (isFrenzied) {
-    ctx.strokeStyle = '#ef4444';
-    ctx.lineWidth = 2;
+    ctx.save();
+    ctx.strokeStyle = 'rgba(239, 68, 68, 0.85)';
+    ctx.lineWidth = 3;
+    ctx.shadowColor = '#ef4444';
+    ctx.shadowBlur = 14;
     ctx.beginPath();
-    ctx.arc(0, 0, 22, 0, Math.PI * 2);
+    ctx.arc(0, -6, 24, 0, Math.PI * 2);
     ctx.stroke();
+    ctx.restore();
   }
 
-  // Moving Noodle Legs
-  ctx.strokeStyle = isFrenzied ? '#ef4444' : '#0284c7';
-  ctx.lineWidth = 3.5;
+  // 3D Cylindrical Noodle Legs
+  ctx.lineWidth = 4;
+  const legGrad = ctx.createLinearGradient(-6, 0, 6, 0);
+  legGrad.addColorStop(0, isFrenzied ? '#f87171' : '#7dd3fc');
+  legGrad.addColorStop(0.5, isFrenzied ? '#ef4444' : '#0284c7');
+  legGrad.addColorStop(1, isFrenzied ? '#991b1b' : '#0369a1');
+  ctx.strokeStyle = legGrad;
+
   ctx.beginPath();
   ctx.moveTo(-6, 8);
   ctx.lineTo(-6 - legAngle * 14, 24);
@@ -3051,21 +3265,27 @@ function drawMeeseeksWalker(ctx, runCycle, isFrenzied) {
   ctx.lineTo(6 + legAngle * 14, 24);
   ctx.stroke();
 
-  // Feet
+  // 3D Rounded Feet
   ctx.fillStyle = isFrenzied ? '#991b1b' : '#0369a1';
-  ctx.fillRect(-9 - legAngle * 14, 23, 7, 3);
-  ctx.fillRect(3 + legAngle * 14, 23, 7, 3);
+  ctx.beginPath();
+  ctx.roundRect(-9 - legAngle * 14, 22, 7.5, 4, 2);
+  ctx.roundRect(3 + legAngle * 14, 22, 7.5, 4, 2);
+  ctx.fill();
 
-  // Slender Blue Torso with Cel-Shading
-  const torsoGrad = ctx.createLinearGradient(-7, -8, 7, 10);
-  torsoGrad.addColorStop(0, isFrenzied ? '#f87171' : '#7dd3fc');
-  torsoGrad.addColorStop(1, isFrenzied ? '#dc2626' : '#0284c7');
+  // 3D Cylindrical Torso with Phong Lighting
+  const torsoGrad = ctx.createRadialGradient(-2, 0, 2, 0, 0, 10);
+  torsoGrad.addColorStop(0, isFrenzied ? '#fca5a5' : '#bae6fd');
+  torsoGrad.addColorStop(0.5, isFrenzied ? '#ef4444' : '#38bdf8');
+  torsoGrad.addColorStop(1, isFrenzied ? '#991b1b' : '#0284c7');
   ctx.fillStyle = torsoGrad;
-  ctx.fillRect(-7, -8, 14, 18);
+  ctx.strokeStyle = isFrenzied ? '#7f1d1d' : '#0369a1';
+  ctx.lineWidth = 1.4;
+  ctx.beginPath();
+  ctx.roundRect(-7, -8, 14, 18, 4);
+  ctx.fill();
+  ctx.stroke();
 
-  // Wild Noodle Arms
-  ctx.strokeStyle = isFrenzied ? '#ef4444' : '#0284c7';
-  ctx.lineWidth = 3;
+  // 3D Cylindrical Arms
   ctx.beginPath();
   ctx.moveTo(-7, -4);
   ctx.lineTo(-14 + armAngle * 12, 8);
@@ -3073,19 +3293,28 @@ function drawMeeseeksWalker(ctx, runCycle, isFrenzied) {
   ctx.lineTo(14 - armAngle * 12, 8);
   ctx.stroke();
 
-  // Round Head
-  ctx.fillStyle = isFrenzied ? '#f87171' : '#38bdf8';
+  // 3D Spherical Head with Specular Glint
+  const headGrad = ctx.createRadialGradient(-3, -19, 2, 0, -16, 12);
+  headGrad.addColorStop(0, isFrenzied ? '#fca5a5' : '#e0f2fe');
+  headGrad.addColorStop(0.45, isFrenzied ? '#ef4444' : '#38bdf8');
+  headGrad.addColorStop(1, isFrenzied ? '#991b1b' : '#0369a1');
+  ctx.fillStyle = headGrad;
   ctx.beginPath();
   ctx.arc(0, -16, 12, 0, Math.PI * 2);
   ctx.fill();
+  ctx.stroke();
 
-  // Orange Hair Tuft
-  ctx.fillStyle = '#f97316';
+  // 3D Orange Hair Bulb with Highlight
+  const hairGrad = ctx.createRadialGradient(-1, -29, 1, 0, -28, 4.5);
+  hairGrad.addColorStop(0, '#fed7aa');
+  hairGrad.addColorStop(0.6, '#f97316');
+  hairGrad.addColorStop(1, '#c2410c');
+  ctx.fillStyle = hairGrad;
   ctx.beginPath();
   ctx.arc(0, -28, 4.5, 0, Math.PI * 2);
   ctx.fill();
 
-  // Eyes (Crimson in Frenzy)
+  // 3D Spherical Eyes
   ctx.fillStyle = isFrenzied ? '#ef4444' : '#ffffff';
   ctx.beginPath();
   ctx.arc(-4, -17, 3, 0, Math.PI * 2);
@@ -3098,19 +3327,24 @@ function drawMeeseeksWalker(ctx, runCycle, isFrenzied) {
   ctx.arc(4, -17, 1.2, 0, Math.PI * 2);
   ctx.fill();
 
-  // Frantic Open Smile
+  // Mouth
   ctx.fillStyle = isFrenzied ? '#450a0a' : '#ffffff';
   ctx.beginPath();
   ctx.arc(0, -12, 6, 0, Math.PI);
   ctx.fill();
 }
 
+/**
+ * 3D Volumetric Gromflomite Trooper
+ * Hard-surface chitin armor segments with metallic bronze/green reflection,
+ * 3D cylindrical leg joints, and high-tech rifle with glowing lens.
+ */
 function drawGromflomiteTrooper(ctx, runCycle) {
   const legAngle = Math.sin(runCycle) * 0.5;
 
-  // Segmented Insectoid Chitin Legs
+  // 3D Segmented Chitin Legs
   ctx.strokeStyle = '#3f6212';
-  ctx.lineWidth = 3;
+  ctx.lineWidth = 3.5;
   ctx.beginPath();
   ctx.moveTo(-6, 8);
   ctx.lineTo(-8 - legAngle * 10, 24);
@@ -3118,32 +3352,59 @@ function drawGromflomiteTrooper(ctx, runCycle) {
   ctx.lineTo(8 + legAngle * 10, 24);
   ctx.stroke();
 
-  // Carapace Armor Body with Cel-Shading
-  const chitinGrad = ctx.createLinearGradient(-10, -10, 10, 12);
-  chitinGrad.addColorStop(0, '#65a30d');
-  chitinGrad.addColorStop(1, '#365314');
+  // 3D Beveled Chitin Exoskeleton Torso with Metallic Sheen
+  const chitinGrad = ctx.createLinearGradient(-9, -10, 9, 10);
+  chitinGrad.addColorStop(0, '#a3e635');
+  chitinGrad.addColorStop(0.35, '#65a30d');
+  chitinGrad.addColorStop(0.8, '#365314');
+  chitinGrad.addColorStop(1, '#1a2e05');
   ctx.fillStyle = chitinGrad;
-  ctx.fillRect(-9, -10, 18, 20);
+  ctx.strokeStyle = '#14532d';
+  ctx.lineWidth = 1.4;
+  ctx.beginPath();
+  ctx.roundRect(-9, -10, 18, 20, 3);
+  ctx.fill();
+  ctx.stroke();
 
-  // Federation Chest Emblem
+  // Carapace segment plates
+  ctx.strokeStyle = '#1a2e05';
+  ctx.beginPath();
+  ctx.moveTo(-8, -4);
+  ctx.lineTo(8, -4);
+  ctx.moveTo(-8, 3);
+  ctx.lineTo(8, 3);
+  ctx.stroke();
+
+  // Federation Crest
   ctx.fillStyle = '#facc15';
-  ctx.fillRect(-2, -6, 4, 5);
+  ctx.fillRect(-2, -7, 4, 4);
 
-  // Laser Rifle in hands
-  ctx.fillStyle = '#1e293b';
-  ctx.fillRect(-18, 0, 18, 5);
-  ctx.fillStyle = '#ef4444';
-  ctx.fillRect(-20, 1, 3, 3); // Muzzle
+  // 3D Laser Rifle with cylindrical barrel & optic lens
+  const rifleGrad = ctx.createLinearGradient(0, -2, 0, 4);
+  rifleGrad.addColorStop(0, '#94a3b8');
+  rifleGrad.addColorStop(1, '#1e293b');
+  ctx.fillStyle = rifleGrad;
+  ctx.fillRect(-18, 0, 18, 5.5);
 
-  // Insectoid Head & Curved Antennae
-  ctx.fillStyle = '#4d7c0f';
+  ctx.fillStyle = '#dc2626';
+  ctx.shadowColor = '#ef4444';
+  ctx.shadowBlur = 6;
+  ctx.fillRect(-21, 1, 3.5, 3.5); // Optical diode
+  ctx.shadowBlur = 0;
+
+  // 3D Insectoid Head
+  const headGrad = ctx.createRadialGradient(-2, -20, 2, 0, -18, 11);
+  headGrad.addColorStop(0, '#84cc16');
+  headGrad.addColorStop(0.6, '#4d7c0f');
+  headGrad.addColorStop(1, '#1e3a8a');
+  ctx.fillStyle = headGrad;
   ctx.beginPath();
   ctx.ellipse(0, -18, 10, 12, 0, 0, Math.PI * 2);
   ctx.fill();
 
-  // Antennae
+  // 3D Curved Antennae
   ctx.strokeStyle = '#65a30d';
-  ctx.lineWidth = 2;
+  ctx.lineWidth = 2.2;
   ctx.beginPath();
   ctx.moveTo(-4, -28);
   ctx.lineTo(-8, -36);
@@ -3151,151 +3412,212 @@ function drawGromflomiteTrooper(ctx, runCycle) {
   ctx.lineTo(8, -36);
   ctx.stroke();
 
-  // Bug Compound Visor Eyes (Purple/Red)
-  ctx.fillStyle = '#dc2626';
-  ctx.shadowColor = '#dc2626';
-  ctx.shadowBlur = 6;
+  // 3D Compound Insectoid Eyes (Convex Red Facets)
+  const eyeGrad = ctx.createRadialGradient(-5, -19, 1, -4, -18, 4);
+  eyeGrad.addColorStop(0, '#fca5a5');
+  eyeGrad.addColorStop(0.6, '#dc2626');
+  eyeGrad.addColorStop(1, '#7f1d1d');
+  ctx.fillStyle = eyeGrad;
   ctx.beginPath();
-  ctx.arc(-4, -18, 3.5, 0, Math.PI * 2);
-  ctx.arc(4, -18, 3.5, 0, Math.PI * 2);
+  ctx.arc(-4, -18, 3.8, 0, Math.PI * 2);
+  ctx.arc(4, -18, 3.8, 0, Math.PI * 2);
   ctx.fill();
-  ctx.shadowBlur = 0;
 }
 
+/**
+ * 3D Volumetric Cyber Bird Drone
+ * Aerofoil beveled wings with chrome reflections, dual 3D jet turbine nacelles
+ * with internal glowing combustion cones, and spherical optical camera eye.
+ */
 function drawCyberBirdDrone(ctx, runCycle) {
   const wingFlap = Math.sin(runCycle * 1.8) * 12;
 
-  // Feathered / Cyber Wings Flapping
-  ctx.fillStyle = '#38bdf8';
+  // 3D Chrome Beveled Wings
+  const wingGrad = ctx.createLinearGradient(0, -16 + wingFlap, 0, 8);
+  wingGrad.addColorStop(0, '#e0f2fe');
+  wingGrad.addColorStop(0.4, '#38bdf8');
+  wingGrad.addColorStop(1, '#0369a1');
+  ctx.fillStyle = wingGrad;
+  ctx.strokeStyle = '#0284c7';
+  ctx.lineWidth = 2;
+
   ctx.beginPath();
-  ctx.moveTo(-24, -8 + wingFlap);
+  ctx.moveTo(-25, -8 + wingFlap);
   ctx.lineTo(-8, 2);
   ctx.lineTo(0, -6);
   ctx.lineTo(8, 2);
-  ctx.lineTo(24, -8 + wingFlap);
-  ctx.lineTo(14, -16 + wingFlap);
+  ctx.lineTo(25, -8 + wingFlap);
+  ctx.lineTo(15, -16 + wingFlap);
   ctx.lineTo(0, -12);
-  ctx.lineTo(-14, -16 + wingFlap);
+  ctx.lineTo(-15, -16 + wingFlap);
   ctx.closePath();
   ctx.fill();
-  ctx.strokeStyle = '#0284c7';
-  ctx.lineWidth = 2;
   ctx.stroke();
 
-  // Dual Jet Thruster Flare (Blue core to Orange heat)
-  const flareGrad = ctx.createLinearGradient(0, 10, 0, 25);
-  flareGrad.addColorStop(0, '#38bdf8');
-  flareGrad.addColorStop(0.5, '#f97316');
+  // Dual 3D Cylindrical Jet Turbine Nacelles
+  ctx.fillStyle = '#334155';
+  ctx.fillRect(-6, 7, 4, 6);
+  ctx.fillRect(2, 7, 4, 6);
+
+  // Volumetric Thruster Combustion Flare (Blue Core to Orange Heat)
+  const flareGrad = ctx.createLinearGradient(0, 11, 0, 24);
+  flareGrad.addColorStop(0, '#67e8f9');
+  flareGrad.addColorStop(0.4, '#f97316');
   flareGrad.addColorStop(1, 'rgba(239, 68, 68, 0)');
   ctx.fillStyle = flareGrad;
   ctx.beginPath();
-  ctx.moveTo(-5, 12);
-  ctx.lineTo(0, 22 + Math.random() * 5);
-  ctx.lineTo(5, 12);
+  ctx.moveTo(-6, 12);
+  ctx.lineTo(0, 24 + Math.random() * 5);
+  ctx.lineTo(6, 12);
   ctx.fill();
 
-  // Cyber Bird Body
-  ctx.fillStyle = '#0284c7';
+  // 3D Metallic Drone Fuselage
+  const bodyGrad = ctx.createRadialGradient(-3, -3, 2, 0, 0, 14);
+  bodyGrad.addColorStop(0, '#94a3b8');
+  bodyGrad.addColorStop(0.5, '#475569');
+  bodyGrad.addColorStop(1, '#0f172a');
+  ctx.fillStyle = bodyGrad;
   ctx.beginPath();
-  ctx.ellipse(0, 0, 12, 16, 0, 0, Math.PI * 2);
+  ctx.ellipse(0, 0, 13, 17, 0, 0, Math.PI * 2);
   ctx.fill();
 
-  // Red Visor Optical Eye
-  ctx.fillStyle = '#ef4444';
+  // 3D Convex Camera Eyeball Visor
+  ctx.fillStyle = '#dc2626';
   ctx.shadowColor = '#ef4444';
-  ctx.shadowBlur = 6;
-  ctx.fillRect(-6, -6, 12, 3.5);
+  ctx.shadowBlur = 8;
+  ctx.fillRect(-6, -6, 12, 3.8);
   ctx.shadowBlur = 0;
+  ctx.fillStyle = '#fca5a5';
+  ctx.fillRect(-4, -5.5, 3, 1.2);
 }
 
+/**
+ * 3D Volumetric Boss: Alpha Mr. Meeseeks
+ * Sculpted 3D muscular anatomy (slabs of pectorals, 3D deltoids, six-pack abs with directional light mapping).
+ */
 function drawAlphaMeeseeksBoss(ctx, width, height, runCycle, phase) {
   const stomp = Math.sin(runCycle) * 0.4;
   const isPhase2 = phase === 2;
 
-  // Massive Muscular Blue Body with Cel-Shading
-  const bodyGrad = ctx.createLinearGradient(0, -height / 2.8, 0, height / 2);
-  bodyGrad.addColorStop(0, isPhase2 ? '#1e3a8a' : '#0369a1');
+  // 3D Muscular Torso Slab with Directional Phong Lighting
+  const bodyGrad = ctx.createLinearGradient(-width / 3, -height / 3, width / 3, height / 2);
+  bodyGrad.addColorStop(0, isPhase2 ? '#2563eb' : '#38bdf8');
+  bodyGrad.addColorStop(0.45, isPhase2 ? '#1e3a8a' : '#0284c7');
   bodyGrad.addColorStop(1, isPhase2 ? '#0f172a' : '#075985');
   ctx.fillStyle = bodyGrad;
+  ctx.strokeStyle = isPhase2 ? '#ef4444' : '#0369a1';
+  ctx.lineWidth = 2.5;
   ctx.beginPath();
-  ctx.roundRect(-width / 2.5, -height / 2.8, width * 0.8, height * 0.75, 12);
+  ctx.roundRect(-width / 2.5, -height / 2.8, width * 0.8, height * 0.75, 14);
   ctx.fill();
-
-  // Pectoral and Abdominal Muscle Striations
-  ctx.strokeStyle = isPhase2 ? '#ef4444' : '#38bdf8';
-  ctx.lineWidth = 2;
-  ctx.beginPath();
-  ctx.moveTo(-16, -6);
-  ctx.lineTo(0, 2);
-  ctx.lineTo(16, -6);
-  ctx.moveTo(0, 2);
-  ctx.lineTo(0, 22);
   ctx.stroke();
 
-  // Huge Flexing Arms
-  ctx.fillStyle = isPhase2 ? '#1e40af' : '#0284c7';
+  // 3D Sculpted Pectoral Plates and Abdominal Quadrants
+  ctx.strokeStyle = isPhase2 ? '#f87171' : '#7dd3fc';
+  ctx.lineWidth = 2.2;
   ctx.beginPath();
-  ctx.arc(-width / 2.2, -4 + stomp * 6, 15, 0, Math.PI * 2);
-  ctx.arc(width / 2.2, -4 - stomp * 6, 15, 0, Math.PI * 2);
+  // Pectoral cleft
+  ctx.moveTo(-18, -8);
+  ctx.lineTo(0, 2);
+  ctx.lineTo(18, -8);
+  // Abdominal line
+  ctx.moveTo(0, 2);
+  ctx.lineTo(0, 24);
+  // Six-pack horizontal divisions
+  ctx.moveTo(-12, 9);
+  ctx.lineTo(12, 9);
+  ctx.moveTo(-10, 16);
+  ctx.lineTo(10, 16);
+  ctx.stroke();
+
+  // 3D Deltoid Muscle Spheres
+  const armGrad = ctx.createRadialGradient(-width / 2.2, -4 + stomp * 6, 2, -width / 2.2, -4 + stomp * 6, 16);
+  armGrad.addColorStop(0, isPhase2 ? '#60a5fa' : '#7dd3fc');
+  armGrad.addColorStop(1, isPhase2 ? '#1e3a8a' : '#0284c7');
+  ctx.fillStyle = armGrad;
+  ctx.beginPath();
+  ctx.arc(-width / 2.2, -4 + stomp * 6, 16, 0, Math.PI * 2);
+  ctx.arc(width / 2.2, -4 - stomp * 6, 16, 0, Math.PI * 2);
   ctx.fill();
 
-  // Giant Stomping Legs
+  // 3D Cylindrical Stomping Legs
   ctx.fillStyle = '#0f172a';
   ctx.fillRect(-22, height / 3, 14, 16 + stomp * 6);
   ctx.fillRect(8, height / 3, 14, 16 - stomp * 6);
 
-  // Glowing Electric Eyes (Cyan or Crimson)
+  // 3D Electric Glowing Eyes
   ctx.fillStyle = isPhase2 ? '#ef4444' : '#38bdf8';
   ctx.shadowColor = isPhase2 ? '#ef4444' : '#38bdf8';
-  ctx.shadowBlur = 14;
+  ctx.shadowBlur = 16;
   ctx.beginPath();
-  ctx.arc(-10, -22, 6.5, 0, Math.PI * 2);
-  ctx.arc(10, -22, 6.5, 0, Math.PI * 2);
+  ctx.arc(-10, -22, 7, 0, Math.PI * 2);
+  ctx.arc(10, -22, 7, 0, Math.PI * 2);
   ctx.fill();
   ctx.shadowBlur = 0;
 
-  // Big Orange Hair Tuft
-  ctx.fillStyle = '#f97316';
+  // 3D Orange Hair Tuft Sphere
+  const hairGrad = ctx.createRadialGradient(-2, -44, 2, 0, -42, 9);
+  hairGrad.addColorStop(0, '#fdba74');
+  hairGrad.addColorStop(0.6, '#f97316');
+  hairGrad.addColorStop(1, '#c2410c');
+  ctx.fillStyle = hairGrad;
   ctx.beginPath();
-  ctx.arc(0, -42, 8.5, 0, Math.PI * 2);
+  ctx.arc(0, -42, 9, 0, Math.PI * 2);
   ctx.fill();
 }
 
+/**
+ * 3D Volumetric Boss: Cyber Birdperson
+ * Multi-layer chamfered blade wings, cylindrical armor torso, and glowing 3D spherical plasma core.
+ */
 function drawCyberBirdpersonBoss(ctx, width, height, runCycle, phase) {
   const wingFlap = Math.sin(runCycle * 1.5) * 16;
   const isPhase2 = phase === 2;
 
-  // Giant Articulated Cybernetic Wings
-  ctx.fillStyle = isPhase2 ? '#1e293b' : '#475569';
-  ctx.beginPath();
-  ctx.moveTo(-width * 0.72, -16 + wingFlap);
-  ctx.lineTo(0, -10);
-  ctx.lineTo(width * 0.72, -16 + wingFlap);
-  ctx.lineTo(width * 0.45, 16);
-  ctx.lineTo(0, 8);
-  ctx.lineTo(-width * 0.45, 16);
-  ctx.closePath();
-  ctx.fill();
+  // 3D Multi-Layer Chamfered Blade Wings
+  const wingGrad = ctx.createLinearGradient(0, -18 + wingFlap, 0, 16);
+  wingGrad.addColorStop(0, '#cbd5e1');
+  wingGrad.addColorStop(0.5, isPhase2 ? '#1e293b' : '#475569');
+  wingGrad.addColorStop(1, '#0f172a');
+  ctx.fillStyle = wingGrad;
   ctx.strokeStyle = isPhase2 ? '#ef4444' : '#38bdf8';
   ctx.lineWidth = 3;
+
+  ctx.beginPath();
+  ctx.moveTo(-width * 0.74, -16 + wingFlap);
+  ctx.lineTo(0, -10);
+  ctx.lineTo(width * 0.74, -16 + wingFlap);
+  ctx.lineTo(width * 0.46, 17);
+  ctx.lineTo(0, 8);
+  ctx.lineTo(-width * 0.46, 17);
+  ctx.closePath();
+  ctx.fill();
   ctx.stroke();
 
-  // Mechanical Armor Body with Reactor Core
-  ctx.fillStyle = '#64748b';
+  // 3D Armored Torso with Metallic Sheen
+  const torsoGrad = ctx.createRadialGradient(-4, -6, 2, 0, 0, 22);
+  torsoGrad.addColorStop(0, '#94a3b8');
+  torsoGrad.addColorStop(0.6, '#475569');
+  torsoGrad.addColorStop(1, '#1e293b');
+  ctx.fillStyle = torsoGrad;
   ctx.beginPath();
-  ctx.ellipse(0, 0, 20, 28, 0, 0, Math.PI * 2);
+  ctx.ellipse(0, 0, 21, 29, 0, 0, Math.PI * 2);
   ctx.fill();
 
-  // Chest Plasma Reactor Core
-  ctx.fillStyle = isPhase2 ? '#ef4444' : '#38bdf8';
+  // 3D Glowing Spherical Plasma Reactor Core
+  const coreGrad = ctx.createRadialGradient(-1, 0, 1, 0, 2, 8);
+  coreGrad.addColorStop(0, '#ffffff');
+  coreGrad.addColorStop(0.5, isPhase2 ? '#ef4444' : '#38bdf8');
+  coreGrad.addColorStop(1, isPhase2 ? '#7f1d1d' : '#0369a1');
+  ctx.fillStyle = coreGrad;
   ctx.shadowColor = isPhase2 ? '#ef4444' : '#38bdf8';
-  ctx.shadowBlur = 12;
+  ctx.shadowBlur = 16;
   ctx.beginPath();
-  ctx.arc(0, 2, 7, 0, Math.PI * 2);
+  ctx.arc(0, 2, 8, 0, Math.PI * 2);
   ctx.fill();
   ctx.shadowBlur = 0;
 
-  // Laser Eye Visor
+  // 3D Laser Eye Visor
   ctx.fillStyle = '#ef4444';
   ctx.shadowColor = '#ef4444';
   ctx.shadowBlur = 10;
@@ -3303,22 +3625,18 @@ function drawCyberBirdpersonBoss(ctx, width, height, runCycle, phase) {
   ctx.shadowBlur = 0;
 }
 
+/**
+ * 3D Volumetric Boss: Evil Morty
+ * 3D tailored suit with peaked lapels, billowing 3D cape, gold eyepatch with holographic crosshair,
+ * and 3D dark-matter orb turret with concentric orbiting rings.
+ */
 function drawEvilMortyBoss(ctx, width, height, runCycle, phase) {
   const isPhase2 = phase === 2;
 
-  // 1. Citadel President Suit & Billowing Dual-Tone Cape
-  ctx.fillStyle = '#0f172a';
-  ctx.beginPath();
+  // 3D Billowing Cape with Volumetric Folds
   const capeFlap = Math.sin(runCycle) * 8;
-  ctx.moveTo(-16, -10);
-  ctx.lineTo(-26 - capeFlap, 32);
-  ctx.lineTo(26 + capeFlap, 32);
-  ctx.lineTo(16, -10);
-  ctx.closePath();
-  ctx.fill();
-
-  // Inner purple cape lining
-  ctx.fillStyle = '#4c1d95';
+  // Inner dark purple lining
+  ctx.fillStyle = '#3b0764';
   ctx.beginPath();
   ctx.moveTo(-12, 10);
   ctx.lineTo(-22 - capeFlap, 32);
@@ -3327,31 +3645,65 @@ function drawEvilMortyBoss(ctx, width, height, runCycle, phase) {
   ctx.closePath();
   ctx.fill();
 
-  // 2. Yellow Shirt & Black Tie
-  ctx.fillStyle = '#facc15';
-  ctx.fillRect(-10, -8, 20, 24);
-  ctx.fillStyle = '#020617';
-  ctx.fillRect(-2, -6, 4, 14);
+  // Outer black suit cape
+  const capeGrad = ctx.createLinearGradient(0, -10, 0, 32);
+  capeGrad.addColorStop(0, '#1e293b');
+  capeGrad.addColorStop(1, '#020617');
+  ctx.fillStyle = capeGrad;
+  ctx.beginPath();
+  ctx.moveTo(-16, -10);
+  ctx.lineTo(-26 - capeFlap, 32);
+  ctx.lineTo(26 + capeFlap, 32);
+  ctx.lineTo(16, -10);
+  ctx.closePath();
+  ctx.fill();
 
-  // 3. Head & Hair
-  ctx.fillStyle = '#854d0e';
+  // 3D Presidential Suit with Gold Buttons
+  ctx.fillStyle = '#0f172a';
+  ctx.fillRect(-10, -8, 20, 24);
+  // Yellow shirt & tie
+  ctx.fillStyle = '#facc15';
+  ctx.fillRect(-3, -8, 6, 20);
+  ctx.fillStyle = '#020617';
+  ctx.fillRect(-1.5, -6, 3, 14);
+
+  // 3D Head & Hair
+  ctx.fillStyle = '#78350f';
   ctx.beginPath();
   ctx.arc(0, -18, 14, 0, Math.PI * 2);
   ctx.fill();
 
-  ctx.fillStyle = '#ffedd5';
+  const faceGrad = ctx.createRadialGradient(-3, -17, 2, 0, -15, 12);
+  faceGrad.addColorStop(0, '#fff1f2');
+  faceGrad.addColorStop(0.6, '#fee2e2');
+  faceGrad.addColorStop(1, '#fca5a5');
+  ctx.fillStyle = faceGrad;
   ctx.beginPath();
   ctx.arc(0, -15, 12, 0, Math.PI * 2);
   ctx.fill();
 
-  // 4. Iconic Golden Eye Patch with Holographic Crosshairs
-  ctx.fillStyle = '#eab308';
+  // 3D Golden Eye Patch with Holographic Reticle Grid
+  const patchGrad = ctx.createRadialGradient(4, -17, 1, 5, -16, 6);
+  patchGrad.addColorStop(0, '#fef08a');
+  patchGrad.addColorStop(0.6, '#eab308');
+  patchGrad.addColorStop(1, '#a16207');
+  ctx.fillStyle = patchGrad;
   ctx.shadowColor = '#eab308';
   ctx.shadowBlur = 12;
   ctx.beginPath();
   ctx.arc(5, -16, 5.5, 0, Math.PI * 2);
   ctx.fill();
   ctx.shadowBlur = 0;
+
+  // Holographic crosshair lines inside patch
+  ctx.strokeStyle = '#fde047';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(1, -16);
+  ctx.lineTo(9, -16);
+  ctx.moveTo(5, -20);
+  ctx.lineTo(5, -12);
+  ctx.stroke();
 
   // Other Cold Eye
   ctx.fillStyle = '#ffffff';
@@ -3363,14 +3715,14 @@ function drawEvilMortyBoss(ctx, width, height, runCycle, phase) {
   ctx.arc(-5, -16, 1.5, 0, Math.PI * 2);
   ctx.fill();
 
-  // 5. Orbiting Dark Matter Dimensional Turret & Defensive Barrier
-  const orbitAngle = Date.now() / 400;
+  // Floating 3D Dark-Matter Orb Turret with Concentric Orbiting Rings
+  const orbitAngle = Date.now() / 380;
   const turretX = Math.cos(orbitAngle) * 36;
   const turretY = Math.sin(orbitAngle) * 16 - 10;
 
-  // Barrier Shield (Frontal in Phase 1, Dual in Phase 2)
+  // Front Barrier Shield
   ctx.strokeStyle = '#c084fc';
-  ctx.lineWidth = 2.5;
+  ctx.lineWidth = 2.8;
   ctx.shadowColor = '#c084fc';
   ctx.shadowBlur = 14;
   ctx.beginPath();
@@ -3384,16 +3736,20 @@ function drawEvilMortyBoss(ctx, width, height, runCycle, phase) {
   }
   ctx.shadowBlur = 0;
 
-  // Floating Dark Matter Turret
-  ctx.fillStyle = '#7c3aed';
+  // 3D Dark Matter Sphere Turret with Specular Sheen
+  const orbGrad = ctx.createRadialGradient(turretX - 2, turretY - 2, 1, turretX, turretY, 9);
+  orbGrad.addColorStop(0, '#e9d5ff');
+  orbGrad.addColorStop(0.4, '#9333ea');
+  orbGrad.addColorStop(1, '#3b0764');
+  ctx.fillStyle = orbGrad;
   ctx.strokeStyle = '#c084fc';
-  ctx.lineWidth = 2;
+  ctx.lineWidth = 1.5;
   ctx.beginPath();
   ctx.arc(turretX, turretY, 9, 0, Math.PI * 2);
   ctx.fill();
   ctx.stroke();
 
-  // Turret barrel
+  // 3D Cylindrical Gun Barrel
   ctx.fillStyle = '#c084fc';
   ctx.fillRect(turretX - 14, turretY - 2, 10, 4);
 }
