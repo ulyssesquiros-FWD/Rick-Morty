@@ -2946,32 +2946,34 @@ function drawPS2CelShadedRick(ctx, p) {
   ctx.fillStyle = '#ffffff';
   ctx.fillRect(-2.8, -12, 5.6, 1.5);
 
-  // 7. DYNAMIC SWINGING TOXIC GREEN DROOL (Physics-Driven Saliva with Highlight)
-  const droolSway = Math.sin(now / 140) * 1.2 + (vx * 0.25);
-  const droolStretch = isMoving ? 2.5 : 1;
+  // 7. BABA CANÓNICA DE RICK (Saliva característica goteando en la comisura del labio)
+  ctx.save();
+  ctx.fillStyle = '#9ee038'; // Baba verde claro auténtica de la serie
+  ctx.strokeStyle = '#0f172a';
+  ctx.lineWidth = 1.1;
 
-  ctx.fillStyle = '#84cc16';
-  ctx.shadowColor = '#a3e635';
-  ctx.shadowBlur = 8;
+  // Mancha y escurrimiento sutil de baba en la comisura derecha de la boca
   ctx.beginPath();
-  ctx.moveTo(1.2, -12);
-  ctx.lineTo(3.8, -12);
-  ctx.quadraticCurveTo(3.2 + droolSway, -8, 3.0 + droolSway, -6.5 * droolStretch);
-  ctx.lineTo(1.4 + droolSway, -6.5 * droolStretch);
+  ctx.moveTo(3.2, -12);
+  ctx.quadraticCurveTo(5.2, -11.5, 4.8, -9);
+  ctx.quadraticCurveTo(4.2, -7.5, 3.4, -8.2);
+  ctx.quadraticCurveTo(2.8, -9.8, 3.2, -12);
   ctx.closePath();
   ctx.fill();
+  ctx.stroke();
 
-  // Teardrop bulb at the end of the drool stream
+  // Brillo húmedo de la saliva
+  ctx.fillStyle = '#ffffff';
   ctx.beginPath();
-  ctx.arc(2.2 + droolSway, -5.5 * droolStretch, 1.4, 0, Math.PI * 2);
+  ctx.arc(3.9, -10.2, 0.5, 0, Math.PI * 2);
   ctx.fill();
-  ctx.shadowBlur = 0;
 
-  // Specular shine dot on drool
-  ctx.fillStyle = '#ecfccb';
+  // Pequeño reflejo en la comisura
+  ctx.fillStyle = '#bbf7d0';
   ctx.beginPath();
-  ctx.arc(1.8 + droolSway, -5.8 * droolStretch, 0.45, 0, Math.PI * 2);
+  ctx.arc(4.4, -8.8, 0.45, 0, Math.PI * 2);
   ctx.fill();
+  ctx.restore();
 
   ctx.restore();
 }
