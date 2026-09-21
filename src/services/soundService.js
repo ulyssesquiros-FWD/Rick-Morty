@@ -1,7 +1,8 @@
+import rickAndMortyThemeUrl from '../data/Rick and Morty Theme.mp3';
+
 /**
  * Sound Service - Dimension Raid
- * Pure Web Audio API Synthesizer for retro sci-fi arcade audio.
- * Zero external audio file dependencies - works instantaneously and offline.
+ * Combines the official Rick and Morty Theme soundtrack with Web Audio API SFX.
  */
 
 class SoundService {
@@ -13,6 +14,21 @@ class SoundService {
     this.bgmStep = 0;
     this.bgmTheme = 'level';
     this.musicGain = null;
+    this.themeAudio = null;
+    this.themeUrl = rickAndMortyThemeUrl || '/Rick and Morty Theme.mp3';
+  }
+
+  _initThemeAudio() {
+    if (!this.themeAudio && typeof window !== 'undefined') {
+      try {
+        this.themeAudio = new Audio(this.themeUrl);
+        this.themeAudio.loop = true;
+        this.themeAudio.volume = this.muted ? 0 : 0.45;
+        this.themeAudio.preload = 'auto';
+      } catch (err) {
+        console.warn('Could not initialize Rick and Morty Theme audio element:', err);
+      }
+    }
   }
 
   init() {
@@ -32,6 +48,10 @@ class SoundService {
 
   setMuted(isMuted) {
     this.muted = isMuted;
+    if (this.themeAudio) {
+      this.themeAudio.muted = isMuted;
+      this.themeAudio.volume = isMuted ? 0 : (this.bgmTheme === 'boss' ? 0.55 : 0.45);
+    }
     if (this.musicGain && this.ctx) {
       try {
         this.musicGain.gain.setValueAtTime(isMuted ? 0 : 0.16, this.ctx.currentTime);
@@ -549,37 +569,109 @@ class SoundService {
   }
 
   /**
-   * Start dynamic procedural retro synth BGM soundtrack
+   * Start Rick and Morty Theme soundtrack with dynamic boss tempo modulation
    * @param {'level' | 'boss'} theme
    */
   startMusic(theme = 'level') {
     this.init();
-    if (!this.ctx) return;
+    this._initThemeAudio();
 
-    if (this.bgmActive && this.bgmTheme === theme) return;
+    if (this.bgmActive && this.bgmTheme === theme) {
+      if (this.themeAudio && this.themeAudio.paused && !this.muted) {
+        this.themeAudio.play().catch(() => {});
+      }
+      return;
+    }
     this.stopMusic();
 
     this.bgmActive = true;
     this.bgmTheme = theme;
-    this.bgmStep = 0;
 
-    const tempo = theme === 'boss' ? 160 : 132;
-    const stepIntervalMs = (60 / tempo / 4) * 1000; // 16th note steps
+    // 1. Play authentic Rick and Morty Theme.mp3
+    if (this.themeAudio) {
+      try {
+        this.themeAudio.muted = this.muted;
+        this.themeAudio.volume = this.muted ? 0 : (theme === 'boss' ? 0.55 : 0.45);
+        this.themeAudio.playbackRate = theme === 'boss' ? 1.15 : 1.0;
 
-    this.bgmTimer = setInterval(() => {
-      this._tickMusic();
-    }, stepIntervalMs);
+        const playPromise = this.themeAudio.play();
+        if (playPromise !== undefined) {
+          playPromise.catch(() => {
+            // Autoplay policy: unlock when user interacts with document
+            const unlockPlayback = () => {
+              if (this.bgmActive && this.themeAudio && !this.muted) {
+                this.themeAudio.play().catch(() => {});
+              }
+              window.removeEventListener('click', unlockPlayback);
+              window.removeEventListener('keydown', unlockPlayback);
+              window.removeEventListener('touchstart', unlockPlayback);
+            };
+            window.addEventListener('click', unlockPlayback, { once: true });
+            window.addEventListener('keydown', unlockPlayback, { once: true });
+            window.addEventListener('touchstart', unlockPlayback, { once: true });
+          });
+        }
+      } catch (err) {
+        console.warn('Playback error:', err);
+      }
+    }
+
+    // 2. Boss Arena extra adrenal synth layer
+    if (theme === 'boss' && this.ctx) {
+      this.bgmStep = 0;
+      const stepIntervalMs = (60 / 160 / 4) * 1000;
+      this.bgmTimer = setInterval(() => {
+        this._tickMusic();
+      }, stepIntervalMs);
+    }
   }
 
   /**
-   * Stop background soundtrack
+   * Stop background soundtrack and reset position
    */
   stopMusic() {
     if (this.bgmTimer) {
       clearInterval(this.bgmTimer);
       this.bgmTimer = null;
     }
+    if (this.themeAudio) {
+      try {
+        this.themeAudio.pause();
+        this.themeAudio.currentTime = 0;
+      } catch {}
+    }
     this.bgmActive = false;
+  }
+
+  /**
+   * Pause background soundtrack (preserves playback position)
+   */
+  pauseMusic() {
+    if (this.themeAudio) {
+      try {
+        this.themeAudio.pause();
+      } catch {}
+    }
+    if (this.bgmTimer) {
+      clearInterval(this.bgmTimer);
+      this.bgmTimer = null;
+    }
+  }
+
+  /**
+   * Resume background soundtrack from paused position
+   */
+  resumeMusic() {
+    if (this.muted || !this.bgmActive) return;
+    if (this.themeAudio) {
+      this.themeAudio.play().catch(() => {});
+    }
+    if (this.bgmTheme === 'boss' && !this.bgmTimer && this.ctx) {
+      const stepIntervalMs = (60 / 160 / 4) * 1000;
+      this.bgmTimer = setInterval(() => {
+        this._tickMusic();
+      }, stepIntervalMs);
+    }
   }
 
   /**

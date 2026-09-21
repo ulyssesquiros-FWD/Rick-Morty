@@ -533,6 +533,7 @@ export function useGameEngine({
   // Main Canvas Game Loop
   useEffect(() => {
     if (gameStatus !== 'playing') {
+      soundManager.pauseMusic();
       if (animationFrameIdRef.current) {
         cancelAnimationFrame(animationFrameIdRef.current);
       }
