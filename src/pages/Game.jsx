@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useEffect, useCallback, useRef, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useGame } from '../context/GameContext';
 import { useRickMorty } from '../hooks/useRickMorty';
@@ -55,25 +55,21 @@ export default function Game() {
   const isTimerActive = gameStatus === 'playing';
   const { seconds, resetTimer, formattedTime } = useGameTimer(isTimerActive, 0);
 
-  const [controlsApi, setControlsApi] = useState(null);
+  const controlsRef = useRef(null);
   const finishedRef = useRef(false);
 
-  // Initialize or restart level
-  const initLevel = useCallback(() => {
-    finishedRef.current = false;
-    resetTimer(0);
-    resetGame(validLevelId);
-    startGame(validLevelId);
-    if (controlsApi?.resetEngine) {
-      controlsApi.resetEngine(validLevelId);
-    }
-  }, [controlsApi, resetGame, resetTimer, startGame, validLevelId]);
-
+  // Initialize level when character assets are available and ready
   useEffect(() => {
     if (!apiLoading && !apiError) {
-      initLevel();
+      finishedRef.current = false;
+      resetTimer(0);
+      resetGame(validLevelId);
+      startGame(validLevelId);
+      if (controlsRef.current?.resetEngine) {
+        controlsRef.current.resetEngine(validLevelId);
+      }
     }
-  }, [validLevelId, apiLoading, apiError, initLevel]);
+  }, [validLevelId, apiLoading, apiError, resetGame, resetTimer, startGame]);
 
   // Handle Player Damage
   const handlePlayerDamage = useCallback(
@@ -149,29 +145,47 @@ export default function Game() {
   }, [gameStatus, pauseGame, resumeGame]);
 
   const handleRestart = () => {
-    initLevel();
+    finishedRef.current = false;
+    resetTimer(0);
+    resetGame(validLevelId);
+    startGame(validLevelId);
+    if (controlsRef.current?.resetEngine) {
+      controlsRef.current.resetEngine(validLevelId);
+    }
   };
 
+  const characterAssets = useMemo(
+    () => ({
+      player: playerAsset,
+      support: supportAsset,
+      enemies: enemyAssets
+    }),
+    [playerAsset, supportAsset, enemyAssets]
+  );
+
+  // 1. Loading State
   if (apiLoading) {
     return (
       <div className="game-page-container">
         <LoadingState
-          message="SINCRONIZANDO ENTIDADES DE LA CIUDADELA..."
-          subtext="Descargando sprites y parámetros de Rick, Morty y enemigos..."
+          message="CARGANDO DATOS INTERDIMENSIONALES..."
+          subtext="Sincronizando entidades y parámetros de la Ciudadela C-137..."
         />
       </div>
     );
   }
 
+  // 2. Error State with Retry
   if (apiError) {
     return (
       <div className="game-page-container">
         <ErrorState
-          title="ERROR DE CARGA DE PERSONAJES"
+          title="FALLA EN EL PORTAL DIMENSIONAL"
           message={apiError}
           onRetry={reloadApi}
-          secondaryAction={() => navigate('/')}
-          secondaryLabel="VOLVER AL INICIO"
+          retryLabel="REINTENTAR"
+          secondaryAction={() => navigate('/niveles')}
+          secondaryLabel="VER OTROS NIVELES"
         />
       </div>
     );
@@ -179,6 +193,7 @@ export default function Game() {
 
   const isGameOverOrVictory = gameStatus === 'game_over' || gameStatus === 'victory';
 
+  // 3. Main Gameplay Board
   return (
     <div className="game-page-container">
       {/* HUD Header */}
@@ -193,25 +208,21 @@ export default function Game() {
       {/* Main 2D Canvas Area */}
       <GameBoard
         levelConfig={levelConfig}
-        characterAssets={{
-          player: playerAsset,
-          support: supportAsset,
-          enemies: enemyAssets
-        }}
+        characterAssets={characterAssets}
         gameStatus={gameStatus}
         onEnemyDefeat={handleEnemyDefeat}
         onPlayerDamage={handlePlayerDamage}
         onPlayerDeath={handlePlayerDeath}
         onVictory={handleVictory}
         onPauseToggle={handlePauseToggle}
-        onControlsReady={setControlsApi}
+        controlsRef={controlsRef}
       />
 
       {/* Controls Overlay & Mobile Touch D-Pad */}
       <GameControls
         onTriggerAction={(action, isPressed) => {
-          if (controlsApi?.triggerAction) {
-            controlsApi.triggerAction(action, isPressed);
+          if (controlsRef.current?.triggerAction) {
+            controlsRef.current.triggerAction(action, isPressed);
           }
         }}
       />

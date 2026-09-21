@@ -70,11 +70,14 @@ export function useGameEngine({
     urlsToLoad.forEach(({ key, url }) => {
       if (url && !imageCacheRef.current[key]) {
         const img = new Image();
-        img.crossOrigin = 'anonymous';
-        img.src = url;
         img.onload = () => {
           imageCacheRef.current[key] = img;
         };
+        img.onerror = () => {
+          // Safe fallback - draw routine will render stylish procedural pixel art
+          imageCacheRef.current[key] = null;
+        };
+        img.src = url;
       }
     });
   }, [characterAssets]);

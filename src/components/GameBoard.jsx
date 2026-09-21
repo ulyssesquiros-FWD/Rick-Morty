@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { useRef, useEffect } from 'react';
 import { useGameEngine } from '../hooks/useGameEngine';
 
 /**
@@ -14,11 +14,11 @@ export default function GameBoard({
   onPlayerDeath,
   onVictory,
   onPauseToggle,
-  onControlsReady
+  controlsRef
 }) {
   const canvasRef = useRef(null);
 
-  const { triggerAction, resetEngine } = useGameEngine({
+  const engine = useGameEngine({
     canvasRef,
     levelConfig,
     characterAssets,
@@ -30,10 +30,12 @@ export default function GameBoard({
     onPauseToggle
   });
 
-  // Pass triggerAction up so touch buttons work
-  if (onControlsReady) {
-    onControlsReady({ triggerAction, resetEngine });
-  }
+  // Safely assign engine to ref without re-render loop
+  useEffect(() => {
+    if (controlsRef) {
+      controlsRef.current = engine;
+    }
+  }, [controlsRef, engine]);
 
   const isPaused = gameStatus === 'paused';
 

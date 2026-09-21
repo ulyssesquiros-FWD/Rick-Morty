@@ -1,5 +1,5 @@
 const N8N_WEBHOOK_URL =
-  import.meta.env.VITE_N8N_WEBHOOK_URL || 'http://localhost:5678/webhook/dimension-raid-score';
+  (typeof import.meta !== 'undefined' && import.meta.env?.VITE_N8N_WEBHOOK_URL) || 'http://localhost:5678/webhook/dimension-raid-score';
 
 /**
  * Sends game session data to the n8n automation webhook.

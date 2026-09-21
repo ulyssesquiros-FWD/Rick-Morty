@@ -1,6 +1,6 @@
-import { CHARACTER_IDS } from '../data/gameConfig';
+import { CHARACTER_IDS } from '../data/gameConfig.js';
 
-const API_BASE_URL = import.meta.env.VITE_RICK_MORTY_API || 'https://rickandmortyapi.com/api';
+const API_BASE_URL = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_RICK_MORTY_API) || 'https://rickandmortyapi.com/api';
 
 /**
  * Custom Error Class for Rick and Morty API operations
@@ -13,6 +13,64 @@ export class RickMortyServiceError extends Error {
     this.code = code;
   }
 }
+
+/**
+ * Fallback static character pack in case API is unreachable or times out
+ */
+export const FALLBACK_GAME_CHARACTERS = {
+  player: {
+    id: CHARACTER_IDS.RICK,
+    name: 'Rick Sanchez',
+    image: 'https://rickandmortyapi.com/api/character/avatar/1.jpeg',
+    status: 'Alive',
+    species: 'Human'
+  },
+  support: {
+    id: CHARACTER_IDS.MORTY,
+    name: 'Morty Smith',
+    image: 'https://rickandmortyapi.com/api/character/avatar/2.jpeg',
+    status: 'Alive',
+    species: 'Human'
+  },
+  enemies: [
+    {
+      id: CHARACTER_IDS.MEESEEKS,
+      name: 'Mr. Meeseeks',
+      image: 'https://rickandmortyapi.com/api/character/avatar/242.jpeg',
+      species: 'Meeseeks'
+    },
+    {
+      id: CHARACTER_IDS.GROMBFLOMITE,
+      name: 'Gromflomite Guard',
+      image: 'https://rickandmortyapi.com/api/character/avatar/144.jpeg',
+      species: 'Alien'
+    },
+    {
+      id: CHARACTER_IDS.BIRDPERSON,
+      name: 'Birdperson (Corrupted)',
+      image: 'https://rickandmortyapi.com/api/character/avatar/8.jpeg',
+      species: 'Alien'
+    }
+  ],
+  bosses: {
+    1: {
+      id: CHARACTER_IDS.MEESEEKS,
+      name: 'Alpha Mr. Meeseeks',
+      image: 'https://rickandmortyapi.com/api/character/avatar/242.jpeg'
+    },
+    2: {
+      id: CHARACTER_IDS.BIRDPERSON,
+      name: 'Cyber Birdperson',
+      image: 'https://rickandmortyapi.com/api/character/avatar/8.jpeg'
+    },
+    3: {
+      id: CHARACTER_IDS.EVIL_MORTY,
+      name: 'Evil Morty',
+      image: 'https://rickandmortyapi.com/api/character/avatar/118.jpeg'
+    }
+  },
+  allCharacters: []
+};
 
 /**
  * Fetches a single character by ID from Rick and Morty API.
@@ -34,12 +92,16 @@ export async function getCharacter(id, signal = null) {
         'NOT_FOUND'
       );
     }
-    return await response.json();
+    const data = await response.json();
+    if (!data || typeof data !== 'object') {
+      throw new RickMortyServiceError('Respuesta de API inválida.', 500, 'INVALID_DATA');
+    }
+    return data;
   } catch (error) {
     if (error.name === 'AbortError') throw error;
     if (error instanceof RickMortyServiceError) throw error;
     throw new RickMortyServiceError(
-      'PORTAL CONNECTION FAILED: Unable to communicate with the Rick and Morty API dimension.',
+      'No pudimos conectar con el Consejo Interdimensional.',
       0,
       'NETWORK_ERROR'
     );
@@ -60,18 +122,21 @@ export async function getCharacters(ids, signal = null) {
     const response = await fetch(`${API_BASE_URL}/character/${idsString}`, { signal });
     if (!response.ok) {
       throw new RickMortyServiceError(
-        `Failed to fetch character pack [${idsString}]. Status: ${response.status}`,
+        `Error al obtener personajes [${idsString}]. Código: ${response.status}`,
         response.status,
         'SERVER_ERROR'
       );
     }
     const data = await response.json();
+    if (!data) {
+      throw new RickMortyServiceError('Respuesta vacía de la API.', 500, 'INVALID_DATA');
+    }
     return Array.isArray(data) ? data : [data];
   } catch (error) {
     if (error.name === 'AbortError') throw error;
     if (error instanceof RickMortyServiceError) throw error;
     throw new RickMortyServiceError(
-      'PORTAL CONNECTION FAILED: The multiverse datastream could not be synchronized.',
+      'No pudimos conectar con el Consejo Interdimensional.',
       0,
       'NETWORK_ERROR'
     );
@@ -82,7 +147,7 @@ export async function getCharacters(ids, signal = null) {
  * Fetches all necessary characters for the Dimension Raid arcade game.
  * Uses real character IDs for Rick (Player), Morty (Support), and diverse Enemies/Bosses.
  * @param {AbortSignal} [signal]
- * @returns {Promise<{player: Object, support: Object, enemies: Array, bosses: Object}>}
+ * @returns {Promise<{player: Object, support: Object, enemies: Array, bosses: Object, allCharacters: Array}>}
  */
 export async function getCharactersForGame(signal = null) {
   const targetIds = [
@@ -96,61 +161,43 @@ export async function getCharactersForGame(signal = null) {
     CHARACTER_IDS.GROMBFLOMITE
   ];
 
-  const charactersList = await getCharacters(targetIds, signal);
+  try {
+    const charactersList = await getCharacters(targetIds, signal);
 
-  const characterMap = {};
-  charactersList.forEach((char) => {
-    characterMap[char.id] = char;
-  });
-
-  const player = characterMap[CHARACTER_IDS.RICK] || {
-    id: CHARACTER_IDS.RICK,
-    name: 'Rick Sanchez',
-    image: 'https://rickandmortyapi.com/api/character/avatar/1.jpeg',
-    status: 'Alive',
-    species: 'Human'
-  };
-
-  const support = characterMap[CHARACTER_IDS.MORTY] || {
-    id: CHARACTER_IDS.MORTY,
-    name: 'Morty Smith',
-    image: 'https://rickandmortyapi.com/api/character/avatar/2.jpeg',
-    status: 'Alive',
-    species: 'Human'
-  };
-
-  const enemies = [
-    characterMap[CHARACTER_IDS.MEESEEKS] || {
-      id: CHARACTER_IDS.MEESEEKS,
-      name: 'Mr. Meeseeks',
-      image: 'https://rickandmortyapi.com/api/character/avatar/242.jpeg',
-      species: 'Meeseeks'
-    },
-    characterMap[CHARACTER_IDS.GROMBFLOMITE] || {
-      id: CHARACTER_IDS.GROMBFLOMITE,
-      name: 'Gromflomite Guard',
-      image: 'https://rickandmortyapi.com/api/character/avatar/144.jpeg',
-      species: 'Alien'
-    },
-    characterMap[CHARACTER_IDS.BIRDPERSON] || {
-      id: CHARACTER_IDS.BIRDPERSON,
-      name: 'Birdperson (Corrupted)',
-      image: 'https://rickandmortyapi.com/api/character/avatar/8.jpeg',
-      species: 'Alien'
+    const characterMap = {};
+    if (Array.isArray(charactersList)) {
+      charactersList.forEach((char) => {
+        if (char && char.id) {
+          characterMap[char.id] = char;
+        }
+      });
     }
-  ];
 
-  const bosses = {
-    1: characterMap[CHARACTER_IDS.MEESEEKS],
-    2: characterMap[CHARACTER_IDS.BIRDPERSON],
-    3: characterMap[CHARACTER_IDS.EVIL_MORTY] || characterMap[CHARACTER_IDS.CRONENBERG_RICK]
-  };
+    const player = characterMap[CHARACTER_IDS.RICK] || FALLBACK_GAME_CHARACTERS.player;
+    const support = characterMap[CHARACTER_IDS.MORTY] || FALLBACK_GAME_CHARACTERS.support;
 
-  return {
-    player,
-    support,
-    enemies,
-    bosses,
-    allCharacters: charactersList
-  };
+    const enemies = [
+      characterMap[CHARACTER_IDS.MEESEEKS] || FALLBACK_GAME_CHARACTERS.enemies[0],
+      characterMap[CHARACTER_IDS.GROMBFLOMITE] || FALLBACK_GAME_CHARACTERS.enemies[1],
+      characterMap[CHARACTER_IDS.BIRDPERSON] || FALLBACK_GAME_CHARACTERS.enemies[2]
+    ];
+
+    const bosses = {
+      1: characterMap[CHARACTER_IDS.MEESEEKS] || FALLBACK_GAME_CHARACTERS.bosses[1],
+      2: characterMap[CHARACTER_IDS.BIRDPERSON] || FALLBACK_GAME_CHARACTERS.bosses[2],
+      3: characterMap[CHARACTER_IDS.EVIL_MORTY] || characterMap[CHARACTER_IDS.CRONENBERG_RICK] || FALLBACK_GAME_CHARACTERS.bosses[3]
+    };
+
+    return {
+      player,
+      support,
+      enemies,
+      bosses,
+      allCharacters: charactersList
+    };
+  } catch (err) {
+    if (err.name === 'AbortError') throw err;
+    console.warn('[rickMortyService] Returning fallback characters after API error:', err);
+    throw err;
+  }
 }
