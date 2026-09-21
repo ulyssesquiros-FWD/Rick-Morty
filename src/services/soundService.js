@@ -1,3 +1,4 @@
+import rickAndMortyThemeCleanUrl from '../data/rick_and_morty_theme.mp3';
 import rickAndMortyThemeUrl from '../data/Rick and Morty Theme.mp3';
 
 /**
@@ -15,19 +16,57 @@ class SoundService {
     this.bgmTheme = 'level';
     this.musicGain = null;
     this.themeAudio = null;
-    this.themeUrl = rickAndMortyThemeUrl || '/Rick and Morty Theme.mp3';
+    this.userInteracted = false;
   }
 
   _initThemeAudio() {
     if (!this.themeAudio && typeof window !== 'undefined') {
       try {
-        this.themeAudio = new Audio(this.themeUrl);
-        this.themeAudio.loop = true;
-        this.themeAudio.volume = this.muted ? 0 : 0.45;
-        this.themeAudio.preload = 'auto';
+        const audio = new Audio();
+        const sources = [
+          rickAndMortyThemeCleanUrl,
+          rickAndMortyThemeUrl,
+          '/rick_and_morty_theme.mp3',
+          '/Rick%20and%20Morty%20Theme.mp3',
+          '/Rick and Morty Theme.mp3'
+        ].filter(Boolean);
+
+        let srcIdx = 0;
+        audio.src = sources[srcIdx];
+        audio.loop = true;
+        audio.volume = this.muted ? 0 : 0.55;
+        audio.preload = 'auto';
+
+        audio.addEventListener('error', (e) => {
+          srcIdx++;
+          if (srcIdx < sources.length) {
+            console.warn(`[Audio] Theme source error, switching to fallback ${sources[srcIdx]}`);
+            audio.src = sources[srcIdx];
+            if (this.bgmActive && !this.muted) {
+              audio.play().catch(() => {});
+            }
+          } else {
+            console.error('[Audio] All theme audio sources failed to load:', e);
+          }
+        });
+
+        audio.addEventListener('canplaythrough', () => {
+          if (this.bgmActive && audio.paused && !this.muted) {
+            audio.play().catch(() => {});
+          }
+        });
+
+        this.themeAudio = audio;
       } catch (err) {
         console.warn('Could not initialize Rick and Morty Theme audio element:', err);
       }
+    }
+  }
+
+  enableAudioOnUserGesture() {
+    this.init();
+    if (this.themeAudio && this.bgmActive && this.themeAudio.paused && !this.muted) {
+      this.themeAudio.play().catch(() => {});
     }
   }
 

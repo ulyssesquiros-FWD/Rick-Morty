@@ -462,6 +462,7 @@ export function useGameEngine({
   // Keyboard Event Listeners
   useEffect(() => {
     const handleKeyDown = (e) => {
+      soundManager.enableAudioOnUserGesture();
       if (['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.code)) {
         e.preventDefault();
       }
@@ -512,6 +513,7 @@ export function useGameEngine({
   // Virtual control triggers
   const triggerAction = useCallback(
     (action, isPressed) => {
+      soundManager.enableAudioOnUserGesture();
       if (action === 'swap') {
         if (isPressed) triggerCharacterSwap();
         return;
@@ -530,10 +532,26 @@ export function useGameEngine({
     [triggerCharacterSwap, triggerSpecialSkill, handleJumpPress]
   );
 
+  // Dedicated Background Music Lifecycle Effect (independent of 60 FPS rendering loop)
+  useEffect(() => {
+    if (gameStatus === 'playing') {
+      soundManager.startMusic(gameStateRef.current.bossSpawned ? 'boss' : 'level');
+    } else if (gameStatus === 'paused') {
+      soundManager.pauseMusic();
+    } else {
+      soundManager.stopMusic();
+    }
+  }, [gameStatus, levelConfig?.id]);
+
+  useEffect(() => {
+    return () => {
+      soundManager.stopMusic();
+    };
+  }, []);
+
   // Main Canvas Game Loop
   useEffect(() => {
     if (gameStatus !== 'playing') {
-      soundManager.pauseMusic();
       if (animationFrameIdRef.current) {
         cancelAnimationFrame(animationFrameIdRef.current);
       }
@@ -2060,12 +2078,10 @@ export function useGameEngine({
       animationFrameIdRef.current = requestAnimationFrame(updateAndRender);
     };
 
-    soundManager.startMusic(gameStateRef.current.bossSpawned ? 'boss' : 'level');
     animationFrameIdRef.current = requestAnimationFrame(updateAndRender);
 
     return () => {
       isRunning = false;
-      soundManager.stopMusic();
       if (animationFrameIdRef.current) {
         cancelAnimationFrame(animationFrameIdRef.current);
       }
