@@ -51,8 +51,28 @@ export default function GameHUD({
     return hearts;
   };
 
-  const healthColor =
-    playerHealth > 60 ? '#42f56c' : playerHealth > 30 ? '#facc15' : '#ef4444';
+  const hitsRemaining = Math.max(0, Math.ceil(playerHealth / 25));
+
+  const renderHitSegments = () => {
+    const segments = [];
+    for (let i = 1; i <= 4; i++) {
+      const isFilled = i <= hitsRemaining;
+      const segColor =
+        hitsRemaining >= 3 ? '#42f56c' : hitsRemaining === 2 ? '#facc15' : '#ef4444';
+      segments.push(
+        <div
+          key={`hit-seg-${i}`}
+          className={`hud-hit-segment ${isFilled ? 'seg-active' : 'seg-depleted'}`}
+          style={{
+            backgroundColor: isFilled ? segColor : 'rgba(255,255,255,0.08)',
+            boxShadow: isFilled ? `0 0 8px ${segColor}` : 'none'
+          }}
+          title={`Golpe ${i} de 4 (${isFilled ? 'Activo' : 'Agotado'})`}
+        />
+      );
+    }
+    return segments;
+  };
 
   return (
     <div className="game-hud-container" role="region" aria-label="Game HUD">
@@ -94,20 +114,24 @@ export default function GameHUD({
         </button>
       </div>
 
-      {/* 2. Player Health & Lives */}
+      {/* 2. Player Health, 4-Hit Shield & Lives */}
       <div className="hud-block hud-player-block">
         <div className="hud-player-name">
           <span className="hud-label">PILOTO:</span>
           <strong>{playerName}</strong>
         </div>
 
-        <div className="hud-health-wrapper" title={`Salud: ${playerHealth}%`}>
-          <div
-            className="hud-health-bar"
-            style={{ width: `${playerHealth}%`, backgroundColor: healthColor }}
-          />
-          <span className="hud-health-text">{playerHealth}%</span>
+        {/* 4 Discrete Hits Shield Grid */}
+        <div className="hud-hits-counter-row" title="Dificultad Arcade: 4 golpes máximos por vida">
+          <span className="hud-hits-title">ESCUDO: {hitsRemaining}/4 GOLPES</span>
+          <div className="hud-hit-segments-grid">{renderHitSegments()}</div>
         </div>
+
+        {hitsRemaining === 1 && (
+          <div className="hud-critical-alert" role="alert">
+            ⚠️ ¡1 GOLPE CRÍTICO!
+          </div>
+        )}
 
         <div className="hud-stat-item hud-lives-row">
           <span className="hud-label">VIDAS:</span>

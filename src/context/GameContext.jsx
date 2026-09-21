@@ -76,7 +76,7 @@ export function GameProvider({ children }) {
     setScore((prev) => prev + points);
   }, []);
 
-  const damagePlayer = useCallback((amount = 20) => {
+  const damagePlayer = useCallback((amount = 25) => {
     setPlayerHealth((prev) => {
       const nextHealth = Math.max(0, prev - amount);
       return nextHealth;

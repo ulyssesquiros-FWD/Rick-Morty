@@ -283,6 +283,65 @@
   overflow: hidden;
 }
 
+.hud-hits-counter-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.hud-hits-title {
+  font-family: var(--font-display);
+  font-size: 0.68rem;
+  letter-spacing: 0.05em;
+  color: #94a3b8;
+  font-weight: 800;
+}
+
+.hud-hit-segments-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 5px;
+  width: 140px;
+  height: 12px;
+}
+
+.hud-hit-segment {
+  height: 100%;
+  border-radius: 2px;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.hud-hit-segment.seg-active {
+  box-shadow: 0 0 8px currentColor;
+}
+
+.hud-hit-segment.seg-depleted {
+  background: rgba(15, 23, 42, 0.85) !important;
+  border-color: rgba(239, 68, 68, 0.35) !important;
+}
+
+.hud-critical-alert {
+  font-family: var(--font-display);
+  font-size: 0.62rem;
+  font-weight: 900;
+  color: #ef4444;
+  letter-spacing: 0.04em;
+  text-shadow: 0 0 8px rgba(239, 68, 68, 0.8);
+  animation: hudAlertPulse 0.55s infinite alternate;
+}
+
+@keyframes hudAlertPulse {
+  from {
+    opacity: 0.65;
+    transform: scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1.02);
+  }
+}
+
 .hud-health-bar {
   height: 100%;
   transition: width 0.25s ease-out, background-color 0.25s ease-out;

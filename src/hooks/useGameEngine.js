@@ -774,7 +774,7 @@ export function useGameEngine({
           createExplosion(p.x + p.width / 2, p.y + p.height / 2, '#ef4444', 14);
           p.invulnerableTimer = 45;
           state.screenShake = 7;
-          onPlayerDamage(20);
+          onPlayerDamage(25);
           continue;
         }
 
@@ -827,7 +827,7 @@ export function useGameEngine({
           state.screenShake = 8;
           soundManager.playPlayerHurt();
           createExplosion(cd.x + cd.width / 2, cd.y + cd.height / 2, '#94a3b8', 12);
-          onPlayerDamage(18);
+          onPlayerDamage(25);
           state.ceilingDebris.splice(cIndex, 1);
           continue;
         }
@@ -858,7 +858,7 @@ export function useGameEngine({
             p.invulnerableTimer = 40;
             state.screenShake = 9;
             soundManager.playPlayerHurt();
-            onPlayerDamage(28);
+            onPlayerDamage(25);
           }
         }
 
@@ -1421,7 +1421,7 @@ export function useGameEngine({
           state.screenShake = 8;
           soundManager.playPlayerHurt();
           createExplosion(p.x + p.width / 2, p.y + p.height / 2, '#ef4444', 12);
-          onPlayerDamage(en.isBoss ? 35 : 20);
+          onPlayerDamage(25);
         }
 
         // Out of bounds cleanup behind camera
@@ -2401,289 +2401,370 @@ function draw3DGroundDropShadow(ctx, entityX, entityWidth, entityY, entityHeight
 }
 
 /**
- * 3D Volumetric Rick Sanchez (C-137)
- * - 3D ellipsoidal head with Phong directional lighting (top-left light vector)
- * - 14 3D conical hair spikes arranged in 3 depth layers with facet shading
- * - Volumetric lab coat with 3D cloth thickness, lapel cast-shadows, and billowing split tails
- * - Cylindrical limbs with transversal Phong gradient
- * - 3D C-137 Portal Gun: beveled aluminum body, transparent glass cylinder with glowing green fluid & 3D bubbles
+ * =========================================================================
+ * MODERN AAA 2.5D PROCEDURAL RIGGED CHARACTER MODELS: RICK & MORTY
+ * High-definition skeletal articulation, dynamic cloth physics, expressive
+ * emotion engine, fluid particle simulations and weapon recoil kickback.
+ * =========================================================================
+ */
+
+/**
+ * Modern High-Definition Rick Sanchez (C-137)
+ * - Dynamic breathing physics & spine lean in sprint
+ * - Multi-segment cloth simulation for lab coat tails with dark interior lining
+ * - 14-spike 3D faceted hair dome with ambient occlusion and specular ridge creases
+ * - Facial rigging: expressive segmented unibrow, glossy 3D eyes, bags, wrinkles, and dynamic hanging drool
+ * - C-137 Portal Gun: brushed titanium chassis, transparent Pyrex cylinder with bubbling chroniton plasma,
+ *   twin emitter prongs with crackling neon electrical arcs, and heavy recoil shock absorption
+ * - Quantum micro-thruster exhaust jets on double jumps
  */
 function drawPS2CelShadedRick(ctx, p) {
-  const { x, y, width, height, facing, runCycle, onGround, recoilTimer, blinkTimer } = p;
-  const isMoving = Math.abs(p.vx) > 0.3;
+  const { x, y, width, height, facing, runCycle, onGround, recoilTimer, blinkTimer, jumpCount = 0 } = p;
+  const vx = p.vx || 0;
+  const vy = p.vy || 0;
+  const isMoving = Math.abs(vx) > 0.3;
   const legCycle = onGround && isMoving ? runCycle : 0;
-  const bobbing = onGround && isMoving ? Math.sin(legCycle * 2) * 2.8 : Math.sin(Date.now() / 350) * 1.2;
+
+  // Dynamic physics variables
+  const now = Date.now();
+  const breatheCycle = Math.sin(now / 260);
+  const idleBob = onGround && !isMoving ? breatheCycle * 1.4 : 0;
+  const runBob = onGround && isMoving ? Math.sin(legCycle * 2) * 3.2 : 0;
+  const spineLean = isMoving && onGround ? Math.max(-0.22, Math.min(0.22, vx * 0.038)) : 0;
+  const jumpSquash = !onGround ? Math.max(-4, Math.min(6, vy * 0.4)) : 0;
 
   ctx.save();
-  ctx.translate(x + width / 2, y + height / 2 + bobbing);
+  ctx.translate(x + width / 2, y + height / 2 + idleBob + runBob);
   if (facing === 'left') {
     ctx.scale(-1, 1);
   }
+  ctx.rotate(spineLean);
 
-  // 1. BILLOWING WHITE LAB COAT (3D Split Tails with Cloth Thickness & Inner Depth)
+  // 0. QUANTUM MICRO-THRUSTERS (Double Jump Particle Flares)
+  if (!onGround && (jumpCount > 1 || vy < -3)) {
+    ctx.save();
+    const thrusterFlicker = 10 + Math.sin(now / 40) * 4;
+    // Left shoe jet
+    const jetGradL = ctx.createLinearGradient(-6, 26, -6, 26 + thrusterFlicker);
+    jetGradL.addColorStop(0, '#ffffff');
+    jetGradL.addColorStop(0.3, '#42f56c');
+    jetGradL.addColorStop(0.7, '#06b6d4');
+    jetGradL.addColorStop(1, 'rgba(6, 182, 212, 0)');
+    ctx.fillStyle = jetGradL;
+    ctx.beginPath();
+    ctx.moveTo(-9, 26);
+    ctx.lineTo(-3, 26);
+    ctx.lineTo(-6, 26 + thrusterFlicker);
+    ctx.closePath();
+    ctx.fill();
+
+    // Right shoe jet
+    const jetGradR = ctx.createLinearGradient(6, 26, 6, 26 + thrusterFlicker);
+    jetGradR.addColorStop(0, '#ffffff');
+    jetGradR.addColorStop(0.3, '#42f56c');
+    jetGradR.addColorStop(0.7, '#06b6d4');
+    jetGradR.addColorStop(1, 'rgba(6, 182, 212, 0)');
+    ctx.fillStyle = jetGradR;
+    ctx.beginPath();
+    ctx.moveTo(3, 26);
+    ctx.lineTo(9, 26);
+    ctx.lineTo(6, 26 + thrusterFlicker);
+    ctx.closePath();
+    ctx.fill();
+
+    // Quantum shock rings
+    ctx.strokeStyle = 'rgba(66, 245, 108, 0.7)';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.ellipse(-6, 28, 7, 2.5, 0, 0, Math.PI * 2);
+    ctx.ellipse(6, 28, 7, 2.5, 0, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  // 1. DYNAMIC LAB COAT (Multi-Segment Billowing Tails with Interior Lining)
   ctx.save();
-  const coatSweep = isMoving ? Math.sin(legCycle) * 16 + Math.abs(p.vx) * 3.6 : 0;
-  const jumpBillow = !onGround ? 10 : 0;
+  const velocitySweep = Math.abs(vx) * 3.8;
+  const wave1 = isMoving ? Math.sin(legCycle) * 16 : Math.sin(now / 320) * 3;
+  const wave2 = isMoving ? Math.sin(legCycle + 0.6) * 14 : Math.sin(now / 320 + 0.5) * 3;
+  const jumpFlutter = !onGround ? -vy * 1.8 : 0;
 
-  // Inner coat lining (darker depth shadow)
-  ctx.fillStyle = '#94a3b8';
+  // Background Tail Lining (Deep Slate Depth)
+  ctx.fillStyle = '#475569';
   ctx.beginPath();
-  ctx.moveTo(-10, 8);
-  ctx.lineTo(-26 - coatSweep, 32 - jumpBillow);
-  ctx.lineTo(-17 - coatSweep * 0.7, 34 - jumpBillow);
-  ctx.lineTo(-7, 30);
+  ctx.moveTo(-10, 6);
+  ctx.quadraticCurveTo(-18 - velocitySweep - wave1, 20 + jumpFlutter, -28 - velocitySweep - wave1, 33 + jumpFlutter);
+  ctx.lineTo(-18 - velocitySweep * 0.7, 34 + jumpFlutter);
+  ctx.lineTo(-6, 28);
   ctx.closePath();
   ctx.fill();
 
-  // Outer 3D white lab coat with directional light gradient
-  const coatGrad = ctx.createLinearGradient(-10, 8, -20, 32);
+  // Foreground Tail with Directional Gradient & Hem Stitching
+  const coatGrad = ctx.createLinearGradient(-8, 6, -26, 34);
   coatGrad.addColorStop(0, '#ffffff');
-  coatGrad.addColorStop(0.65, '#f1f5f9');
-  coatGrad.addColorStop(1, '#cbd5e1');
+  coatGrad.addColorStop(0.5, '#f8fafc');
+  coatGrad.addColorStop(0.85, '#e2e8f0');
+  coatGrad.addColorStop(1, '#94a3b8');
 
   ctx.fillStyle = coatGrad;
   ctx.strokeStyle = '#0f172a';
   ctx.lineWidth = 1.6;
   ctx.beginPath();
-  ctx.moveTo(-10, 8);
-  ctx.lineTo(-24 - coatSweep, 30 - jumpBillow);
-  ctx.lineTo(-18 - coatSweep * 0.7, 32 - jumpBillow);
-  ctx.lineTo(-8, 30);
-  ctx.lineTo(-4, 8);
+  ctx.moveTo(-10, 6);
+  ctx.quadraticCurveTo(-16 - velocitySweep - wave2, 18 + jumpFlutter, -26 - velocitySweep - wave2, 31 + jumpFlutter);
+  ctx.lineTo(-16 - velocitySweep * 0.7, 33 + jumpFlutter);
+  ctx.lineTo(-5, 29);
+  ctx.lineTo(-2, 6);
   ctx.closePath();
   ctx.fill();
   ctx.stroke();
   ctx.restore();
 
-  // 2. 3D CYLINDRICAL LEGS (Dark Brown Slacks with Phong Cylindrical Shading + White Socks + Penny Loafers)
-  const leftLegAngle = onGround ? Math.sin(legCycle) * 0.62 : -0.32;
-  const rightLegAngle = onGround ? -Math.sin(legCycle) * 0.62 : 0.42;
+  // 2. SKELETAL ARTICULATED LEGS (Brown Slacks + Ankle Cuffs + White Socks + Loafers)
+  const leftLegAngle = onGround ? Math.sin(legCycle) * 0.64 : -0.35;
+  const rightLegAngle = onGround ? -Math.sin(legCycle) * 0.64 : 0.42;
 
-  // Left Leg (3D Cylinder)
-  ctx.save();
-  ctx.translate(-5, 14);
-  ctx.rotate(leftLegAngle);
+  // Helper: Draw single articulated leg
+  const drawRickLeg = (offsetX, legAngle) => {
+    ctx.save();
+    ctx.translate(offsetX, 13);
+    ctx.rotate(legAngle);
 
-  // Cylindrical lighting: highlight on left, shadow on right
-  const legGradLeft = ctx.createLinearGradient(-2.5, 0, 2.5, 0);
-  legGradLeft.addColorStop(0, '#9a3412');
-  legGradLeft.addColorStop(0.4, '#78350f');
-  legGradLeft.addColorStop(1, '#451a03');
-  ctx.fillStyle = legGradLeft;
-  ctx.strokeStyle = '#290e02';
-  ctx.lineWidth = 1.3;
-  ctx.fillRect(-2.5, 0, 5, 14);
-  ctx.strokeRect(-2.5, 0, 5, 14);
+    // Thigh and Calf (Volumetric Cylinder)
+    const legGrad = ctx.createLinearGradient(-3, 0, 3, 0);
+    legGrad.addColorStop(0, '#9a3412');
+    legGrad.addColorStop(0.35, '#78350f');
+    legGrad.addColorStop(0.8, '#451a03');
+    legGrad.addColorStop(1, '#290e02');
+    ctx.fillStyle = legGrad;
+    ctx.strokeStyle = '#1c0a02';
+    ctx.lineWidth = 1.3;
 
-  // 3D Knee crease
-  ctx.strokeStyle = '#290e02';
-  ctx.beginPath();
-  ctx.moveTo(-2, 7);
-  ctx.lineTo(2, 7);
-  ctx.stroke();
+    // Pants Tube
+    ctx.fillRect(-2.5, 0, 5.2, 14);
+    ctx.strokeRect(-2.5, 0, 5.2, 14);
 
-  // Exposed White Sock cylinder
-  const sockGrad = ctx.createLinearGradient(-2.5, 0, 2.5, 0);
-  sockGrad.addColorStop(0, '#ffffff');
-  sockGrad.addColorStop(1, '#cbd5e1');
-  ctx.fillStyle = sockGrad;
-  ctx.fillRect(-2.5, 11, 5, 2.5);
+    // Knee fabric crease
+    ctx.strokeStyle = '#290e02';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(-2, 7);
+    ctx.lineTo(2, 7.5);
+    ctx.stroke();
 
-  // Black Penny Loafer Shoe with 3D heel block
-  ctx.fillStyle = '#0f172a';
-  ctx.beginPath();
-  ctx.roundRect(-3, 13, 8.5, 4.5, [1, 2, 2, 1]);
-  ctx.fill();
-  // Shoe sole rim
-  ctx.fillStyle = '#334155';
-  ctx.fillRect(-3, 16.5, 8.5, 1);
-  ctx.restore();
+    // White Sock Cylinder
+    const sockGrad = ctx.createLinearGradient(-2.5, 0, 2.5, 0);
+    sockGrad.addColorStop(0, '#ffffff');
+    sockGrad.addColorStop(0.7, '#e2e8f0');
+    sockGrad.addColorStop(1, '#94a3b8');
+    ctx.fillStyle = sockGrad;
+    ctx.fillRect(-2.5, 11, 5.2, 3);
 
-  // Right Leg (3D Cylinder)
-  ctx.save();
-  ctx.translate(5, 14);
-  ctx.rotate(rightLegAngle);
+    // Penny Loafer (Sleek leather with sole tread & heel)
+    ctx.fillStyle = '#0f172a';
+    ctx.beginPath();
+    ctx.roundRect(-3.2, 13.5, 9.2, 5, [1, 2, 2, 1]);
+    ctx.fill();
 
-  const legGradRight = ctx.createLinearGradient(-2.5, 0, 2.5, 0);
-  legGradRight.addColorStop(0, '#9a3412');
-  legGradRight.addColorStop(0.4, '#78350f');
-  legGradRight.addColorStop(1, '#451a03');
-  ctx.fillStyle = legGradRight;
-  ctx.strokeStyle = '#290e02';
-  ctx.lineWidth = 1.3;
-  ctx.fillRect(-2.5, 0, 5, 14);
-  ctx.strokeRect(-2.5, 0, 5, 14);
+    // Leather Specular Shine on toe cap
+    ctx.fillStyle = '#334155';
+    ctx.fillRect(1.5, 14, 3.5, 1.2);
 
-  ctx.strokeStyle = '#290e02';
-  ctx.beginPath();
-  ctx.moveTo(-2, 7);
-  ctx.lineTo(2, 7);
-  ctx.stroke();
+    // Dark Rubber Outsole
+    ctx.fillStyle = '#020617';
+    ctx.fillRect(-3.2, 17.5, 9.2, 1.2);
+    ctx.restore();
+  };
 
-  ctx.fillStyle = sockGrad;
-  ctx.fillRect(-2.5, 11, 5, 2.5);
+  drawRickLeg(-5, leftLegAngle, true);
+  drawRickLeg(5, rightLegAngle, false);
 
-  ctx.fillStyle = '#0f172a';
-  ctx.beginPath();
-  ctx.roundRect(-3, 13, 8.5, 4.5, [1, 2, 2, 1]);
-  ctx.fill();
-  ctx.fillStyle = '#334155';
-  ctx.fillRect(-3, 16.5, 8.5, 1);
-  ctx.restore();
-
-  // 3. 3D TORSO (Lab Coat + Notched 3D Lapels + Cylindrical Turquoise Shirt + 3D Brass Buckle)
-  // Lab coat body with subtle 3D cylindrical roundness
-  const coatBodyGrad = ctx.createLinearGradient(-10, 0, 10, 0);
+  // 3. VOLUMETRIC TORSO & LAB COAT BODY
+  // Main Lab Coat Front
+  const coatBodyGrad = ctx.createLinearGradient(-11, 0, 11, 0);
   coatBodyGrad.addColorStop(0, '#ffffff');
-  coatBodyGrad.addColorStop(0.7, '#f8fafc');
-  coatBodyGrad.addColorStop(1, '#cbd5e1');
+  coatBodyGrad.addColorStop(0.4, '#f8fafc');
+  coatBodyGrad.addColorStop(0.8, '#e2e8f0');
+  coatBodyGrad.addColorStop(1, '#94a3b8');
   ctx.fillStyle = coatBodyGrad;
   ctx.strokeStyle = '#0f172a';
   ctx.lineWidth = 1.6;
-  ctx.fillRect(-10, -10, 20, 24);
-  ctx.strokeRect(-10, -10, 20, 24);
+  ctx.fillRect(-10.5, -11, 21, 25 + jumpSquash * 0.5);
+  ctx.strokeRect(-10.5, -11, 21, 25 + jumpSquash * 0.5);
 
-  // Cylindrical Turquoise shirt with directional lighting
+  // Turquoise Undershirt with Ribbed Neckline
   const shirtGrad = ctx.createLinearGradient(-4.5, 0, 4.5, 0);
   shirtGrad.addColorStop(0, '#67e8f9');
-  shirtGrad.addColorStop(0.45, '#06b6d4');
+  shirtGrad.addColorStop(0.4, '#06b6d4');
+  shirtGrad.addColorStop(0.8, '#0891b2');
   shirtGrad.addColorStop(1, '#0e7490');
   ctx.fillStyle = shirtGrad;
   ctx.beginPath();
-  ctx.moveTo(-4.5, -10);
-  ctx.lineTo(4.5, -10);
+  ctx.moveTo(-4.5, -11);
+  ctx.lineTo(4.5, -11);
   ctx.lineTo(3.5, 10);
   ctx.lineTo(-3.5, 10);
   ctx.closePath();
   ctx.fill();
 
-  // 3D Notched Lapels casting soft cast-shadow onto shirt
-  ctx.fillStyle = 'rgba(0, 0, 0, 0.12)';
+  // 3D Peak Notched Lapels casting ambient drop shadows onto shirt
+  ctx.fillStyle = 'rgba(0, 0, 0, 0.16)';
   ctx.beginPath();
-  ctx.moveTo(-4.5, -10);
+  ctx.moveTo(-4.5, -11);
   ctx.lineTo(-3.5, 10);
-  ctx.lineTo(-2.5, 10);
-  ctx.lineTo(-3.5, -10);
+  ctx.lineTo(-2.2, 10);
+  ctx.lineTo(-3.2, -11);
   ctx.closePath();
   ctx.fill();
 
   ctx.strokeStyle = '#cbd5e1';
   ctx.lineWidth = 1.6;
   ctx.beginPath();
-  ctx.moveTo(-10, -8);
+  ctx.moveTo(-10.5, -9);
   ctx.lineTo(-4.5, -2);
-  ctx.lineTo(-10, 4);
-  ctx.moveTo(10, -8);
+  ctx.lineTo(-10.5, 5);
+  ctx.moveTo(10.5, -9);
   ctx.lineTo(4.5, -2);
-  ctx.lineTo(10, 4);
+  ctx.lineTo(10.5, 5);
   ctx.stroke();
 
-  // Left breast pocket with 3D pens (Red and Black)
+  // Breast Pocket with Rick's Screwdriver/Laser Pen
   ctx.strokeStyle = '#94a3b8';
   ctx.lineWidth = 1;
-  ctx.strokeRect(-8, -4, 4, 5);
+  ctx.strokeRect(-8.5, -4, 4.2, 5.2);
+  // Red & Brass Screwdriver
   ctx.fillStyle = '#ef4444';
-  ctx.fillRect(-7, -6, 1.2, 2.5);
-  ctx.fillStyle = '#0f172a';
-  ctx.fillRect(-5.5, -6, 1.2, 2.5);
+  ctx.fillRect(-7.5, -6.5, 1.4, 3);
+  ctx.fillStyle = '#f59e0b';
+  ctx.fillRect(-5.8, -6.5, 1.4, 3);
 
-  // Dark Leather Belt with 3D Golden Brass Buckle
+  // Dark Brown Belt with 3D Golden Brass Buckle
   ctx.fillStyle = '#1e293b';
-  ctx.fillRect(-9, 10, 18, 3.5);
-  // Brass Buckle bevel
+  ctx.fillRect(-9.5, 10, 19, 3.8);
+  // Brass Buckle Bevel
   ctx.fillStyle = '#f59e0b';
   ctx.strokeStyle = '#b45309';
   ctx.lineWidth = 1;
-  ctx.strokeRect(-2.5, 9.5, 5, 4.5);
-  ctx.fillRect(-2, 10, 4, 3.5);
-  // Specular sheen on buckle
+  ctx.strokeRect(-3, 9.5, 6, 4.8);
+  ctx.fillRect(-2.5, 10, 5, 3.8);
   ctx.fillStyle = '#fef08a';
-  ctx.fillRect(-2, 10, 1.5, 1.5);
+  ctx.fillRect(-2.2, 10.3, 2, 1.8);
 
-  // 4. 3D ARMS & HIGH-TECH C-137 PORTAL GUN
-  const recoilOffset = recoilTimer > 0 ? -recoilTimer : 0;
+  // 4. SCI-FI PORTAL GUN C-137 (Ergonomic Grip, Bubbling Pyrex Core & Recoil Kick)
+  const recoilOffset = recoilTimer > 0 ? -recoilTimer * 1.5 : 0;
+  const recoilAngle = recoilTimer > 0 ? -0.18 : 0;
+
   ctx.save();
   ctx.translate(9 + recoilOffset, -2);
+  ctx.rotate(recoilAngle);
 
-  // 3D Cylindrical arm sleeve with cuff fold
-  const armGrad = ctx.createLinearGradient(0, -4, 0, 2);
+  // Arm Sleeve with Volumetric Cuff
+  const armGrad = ctx.createLinearGradient(0, -4, 0, 3);
   armGrad.addColorStop(0, '#ffffff');
-  armGrad.addColorStop(1, '#cbd5e1');
+  armGrad.addColorStop(0.7, '#f1f5f9');
+  armGrad.addColorStop(1, '#94a3b8');
   ctx.fillStyle = armGrad;
   ctx.strokeStyle = '#0f172a';
   ctx.lineWidth = 1.4;
-  ctx.fillRect(-6, -4, 11, 5.5);
-  ctx.strokeRect(-6, -4, 11, 5.5);
+  ctx.fillRect(-6, -4, 11, 6);
+  ctx.strokeRect(-6, -4, 11, 6);
 
-  // 3D Portal Gun Chassis (Beveled Brushed Aluminum with Phong Sheen)
-  const gunGrad = ctx.createLinearGradient(0, -5, 0, 3);
-  gunGrad.addColorStop(0, '#ffffff');
+  // Gun Body (Chamfered Titanium Casing)
+  const gunGrad = ctx.createLinearGradient(0, -5, 0, 4);
+  gunGrad.addColorStop(0, '#f8fafc');
   gunGrad.addColorStop(0.3, '#cbd5e1');
-  gunGrad.addColorStop(1, '#475569');
+  gunGrad.addColorStop(0.8, '#475569');
+  gunGrad.addColorStop(1, '#1e293b');
   ctx.fillStyle = gunGrad;
-  ctx.strokeStyle = '#1e293b';
+  ctx.strokeStyle = '#0f172a';
   ctx.lineWidth = 1.2;
   ctx.beginPath();
-  ctx.roundRect(1, -4, 15, 6.5, [1, 2, 2, 1]);
+  ctx.roundRect(1, -4.5, 16, 7.2, [1, 2, 2, 1]);
   ctx.fill();
   ctx.stroke();
 
-  // Cylindrical front nozzle with 3D aperture
-  ctx.fillStyle = '#334155';
-  ctx.fillRect(15, -3, 3.5, 4.5);
+  // Front Muzzle Emitter with Dark Aperture
+  ctx.fillStyle = '#1e293b';
+  ctx.fillRect(16, -3.2, 4, 4.8);
   ctx.fillStyle = '#22c55e';
-  ctx.fillRect(17.5, -2, 1.5, 2.5);
+  ctx.fillRect(18.5, -2, 1.8, 2.4);
 
-  // 3D Cylindrical Transparent Glass Chamber
-  ctx.fillStyle = 'rgba(56, 189, 248, 0.25)';
+  // Transparent Pyrex Fluid Chamber with Metallic Endcaps
+  ctx.fillStyle = 'rgba(56, 189, 248, 0.2)';
   ctx.strokeStyle = '#0284c7';
   ctx.lineWidth = 1;
-  ctx.strokeRect(4, -9, 8, 5);
+  ctx.strokeRect(4, -10, 8.5, 5.5);
 
-  // Volumetric glowing green portal fluid core
-  const fluidGrad = ctx.createRadialGradient(8, -6.5, 1, 8, -6.5, 5);
-  fluidGrad.addColorStop(0, '#86efac');
-  fluidGrad.addColorStop(0.6, '#22c55e');
-  fluidGrad.addColorStop(1, '#15803d');
+  // Glowing Chroniton Quantum Fluid with Animated Bubbles
+  const fluidGrad = ctx.createRadialGradient(8.2, -7.2, 1, 8.2, -7.2, 5.5);
+  fluidGrad.addColorStop(0, '#bbf7d0');
+  fluidGrad.addColorStop(0.5, '#4ade80');
+  fluidGrad.addColorStop(0.85, '#16a34a');
+  fluidGrad.addColorStop(1, '#14532d');
   ctx.fillStyle = fluidGrad;
-  ctx.shadowColor = '#39ff14';
-  ctx.shadowBlur = 12;
-  ctx.fillRect(4.5, -8.5, 7, 4);
+  ctx.shadowColor = '#42f56c';
+  ctx.shadowBlur = 14;
+  ctx.fillRect(4.5, -9.5, 7.5, 4.5);
   ctx.shadowBlur = 0;
 
-  // 3D Internal bubbles inside fluid
-  const bubbleY = -6.5 + Math.sin(Date.now() / 140) * 1.5;
+  // Bubbles inside fluid
+  const bubble1Y = -8.5 + Math.sin(now / 150) * 1.8;
+  const bubble2Y = -6.5 + Math.cos(now / 180) * 1.5;
   ctx.fillStyle = '#ffffff';
   ctx.beginPath();
-  ctx.arc(6.5, bubbleY, 0.8, 0, Math.PI * 2);
-  ctx.arc(9.5, bubbleY - 1, 0.6, 0, Math.PI * 2);
+  ctx.arc(6.5, bubble1Y, 0.8, 0, Math.PI * 2);
+  ctx.arc(9.8, bubble2Y, 0.6, 0, Math.PI * 2);
   ctx.fill();
 
-  // Red Cylindrical Antenna Button with 3D dome
+  // Top Red LED Dome with Pulse
+  const ledGlow = Math.sin(now / 180) * 3;
   ctx.fillStyle = '#dc2626';
-  ctx.fillRect(2, -9.5, 2, 5.5);
+  ctx.fillRect(2, -10, 2, 5.5);
   ctx.fillStyle = '#f87171';
+  ctx.shadowColor = '#ef4444';
+  ctx.shadowBlur = 6 + ledGlow;
   ctx.beginPath();
-  ctx.arc(3, -9.5, 1.5, 0, Math.PI * 2);
+  ctx.arc(3, -10, 1.6, 0, Math.PI * 2);
   ctx.fill();
+  ctx.shadowBlur = 0;
 
-  // Rick's 3D Slender Fingers wrapping around grip
+  // Electrical Spark Arcs Between Front Emitter Prongs (During Firing)
+  if (recoilTimer > 0) {
+    ctx.strokeStyle = '#bbf7d0';
+    ctx.lineWidth = 1.4;
+    ctx.beginPath();
+    ctx.moveTo(17, -5);
+    ctx.lineTo(19, -2);
+    ctx.lineTo(21, -4);
+    ctx.stroke();
+
+    // Muzzle flash glow
+    ctx.fillStyle = 'rgba(66, 245, 108, 0.6)';
+    ctx.shadowColor = '#42f56c';
+    ctx.shadowBlur = 18;
+    ctx.beginPath();
+    ctx.arc(20, -1, 5, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+  }
+
+  // Rick's Slender Fingers Wrapping Handgrip
   ctx.fillStyle = '#fee2e2';
   ctx.strokeStyle = '#0f172a';
   ctx.lineWidth = 1;
   ctx.beginPath();
-  ctx.arc(3, -1, 2.5, 0, Math.PI * 2);
+  ctx.arc(3.2, -1, 2.6, 0, Math.PI * 2);
   ctx.fill();
   ctx.stroke();
   ctx.restore();
 
-  // 5. 3D RICK HEAD & 14-CONE VOLUMETRIC RADIAL HAIR
-  // Background Hair Spikes (Layer 1 - In Ambient Shadow)
-  const hairBackGrad = ctx.createLinearGradient(0, -35, 0, -10);
-  hairBackGrad.addColorStop(0, '#38bdf8');
+  // 5. 3D SCULPTED HAIR DOME (14 Volumetric Spikes with Facet Bevels)
+  // Layer 1: Ambient Shadow (Deep Azure / Dark Cyan)
+  const hairBackGrad = ctx.createLinearGradient(0, -36, 0, -10);
+  hairBackGrad.addColorStop(0, '#0284c7');
   hairBackGrad.addColorStop(1, '#0369a1');
   ctx.fillStyle = hairBackGrad;
-  ctx.strokeStyle = '#0284c7';
+  ctx.strokeStyle = '#075985';
   ctx.lineWidth = 1.4;
 
   const spikeAnglesBack = [
@@ -2694,18 +2775,18 @@ function drawPS2CelShadedRick(ctx, p) {
   ctx.beginPath();
   ctx.moveTo(0, -22);
   spikeAnglesBack.forEach((angle) => {
-    const tipDist = 24 + (Math.abs(Math.sin(angle * 3)) * 4.5);
+    const tipDist = 25 + (Math.abs(Math.sin(angle * 3)) * 4.8);
     ctx.lineTo(Math.cos(angle) * tipDist, -22 + Math.sin(angle) * tipDist);
   });
   ctx.closePath();
   ctx.fill();
   ctx.stroke();
 
-  // Foreground Hair Spikes (Layer 2 - Direct 3D Light)
+  // Layer 2: Foreground Volumetric Spikes with Dynamic Light
   const hairForeGrad = ctx.createRadialGradient(-6, -28, 4, 0, -22, 26);
   hairForeGrad.addColorStop(0, '#ffffff');
   hairForeGrad.addColorStop(0.3, '#cffafe');
-  hairForeGrad.addColorStop(0.75, '#7dd3fc');
+  hairForeGrad.addColorStop(0.7, '#7dd3fc');
   hairForeGrad.addColorStop(1, '#0284c7');
   ctx.fillStyle = hairForeGrad;
   ctx.strokeStyle = '#0369a1';
@@ -2719,55 +2800,67 @@ function drawPS2CelShadedRick(ctx, p) {
   ctx.beginPath();
   ctx.moveTo(0, -22);
   spikeAnglesFore.forEach((angle) => {
-    const tipDist = 23 + (Math.abs(Math.sin(angle * 3)) * 4.0);
+    const tipDist = 24 + (Math.abs(Math.sin(angle * 3)) * 4.2);
     ctx.lineTo(Math.cos(angle) * tipDist, -22 + Math.sin(angle) * tipDist);
   });
   ctx.closePath();
   ctx.fill();
   ctx.stroke();
 
-  // Rick 3D Ellipsoidal Head with Phong lighting
-  const headGrad = ctx.createRadialGradient(-3, -24, 2, 0, -20, 14.5);
+  // Internal Spikes Ridge Bevel Lines (MultiVersus / ArcSys 3D Crease)
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.45)';
+  ctx.lineWidth = 1.2;
+  spikeAnglesFore.forEach((angle) => {
+    const tipDist = 21;
+    ctx.beginPath();
+    ctx.moveTo(Math.cos(angle) * 11, -22 + Math.sin(angle) * 11);
+    ctx.lineTo(Math.cos(angle) * tipDist, -22 + Math.sin(angle) * tipDist);
+    ctx.stroke();
+  });
+
+  // 6. RICK'S 3D ELLIPSOIDAL HEAD & FACIAL RIGGING
+  const headGrad = ctx.createRadialGradient(-3.5, -24, 2, 0, -20, 15);
   headGrad.addColorStop(0, '#fff1f2');
   headGrad.addColorStop(0.45, '#fee2e2');
   headGrad.addColorStop(0.85, '#fecaca');
-  headGrad.addColorStop(1, '#fca5a5'); // Ambient jaw shadow
+  headGrad.addColorStop(1, '#fca5a5');
   ctx.fillStyle = headGrad;
   ctx.strokeStyle = '#0f172a';
   ctx.lineWidth = 1.6;
   ctx.beginPath();
-  ctx.ellipse(0, -20, 11, 14.5, 0, 0, Math.PI * 2);
+  ctx.ellipse(0, -20, 11, 14.8, 0, 0, Math.PI * 2);
   ctx.fill();
   ctx.stroke();
 
-  // Bald hairline contour above forehead
+  // Bald Hairline Arch Above Forehead
   ctx.strokeStyle = '#0284c7';
   ctx.lineWidth = 1.2;
   ctx.beginPath();
-  ctx.arc(0, -22, 11.2, -Math.PI * 0.8, -Math.PI * 0.2);
+  ctx.arc(0, -22.5, 11.2, -Math.PI * 0.8, -Math.PI * 0.2);
   ctx.stroke();
 
-  // Forehead Age Wrinkles
+  // Forehead Age Creases
   ctx.strokeStyle = '#94a3b8';
   ctx.lineWidth = 1.2;
   ctx.beginPath();
-  ctx.arc(0, -28, 6, Math.PI * 0.2, Math.PI * 0.8);
+  ctx.arc(0, -28.5, 6, Math.PI * 0.2, Math.PI * 0.8);
   ctx.stroke();
   ctx.beginPath();
-  ctx.arc(0, -26, 7, Math.PI * 0.25, Math.PI * 0.75);
+  ctx.arc(0, -26.5, 7, Math.PI * 0.25, Math.PI * 0.75);
   ctx.stroke();
 
-  // Bold Arched Cyan Unibrow with 3D Ridge Shadow
+  // Expressive Segmented Cyan Unibrow (Angles in Combat/Shooting)
+  const browTension = recoilTimer > 0 ? 2 : 0;
   ctx.strokeStyle = '#0e7490';
-  ctx.lineWidth = 3.0;
+  ctx.lineWidth = 3.2;
   ctx.beginPath();
-  ctx.moveTo(-8, -25);
-  ctx.quadraticCurveTo(0, -26.5, 8, -25);
+  ctx.moveTo(-8, -24.5 + browTension * 0.5);
+  ctx.quadraticCurveTo(0, -27 - browTension, 8, -24.5 + browTension * 0.5);
   ctx.stroke();
 
-  // Under-eye bags
+  // Bags Under Eyes (Insomnia / Exhaustion)
   ctx.strokeStyle = '#cbd5e1';
-  ctx.lineWidth = 1;
+  ctx.lineWidth = 1.1;
   ctx.beginPath();
   ctx.arc(-4.5, -19, 4, Math.PI * 0.2, Math.PI * 0.8);
   ctx.stroke();
@@ -2775,45 +2868,45 @@ function drawPS2CelShadedRick(ctx, p) {
   ctx.arc(4.5, -19, 4, Math.PI * 0.2, Math.PI * 0.8);
   ctx.stroke();
 
-  // 3D Spherical Eyes with Specular Highlights
+  // 3D Spherical Eyes with Pupils and Highlights
   const isBlinking = blinkTimer > 172;
   if (!isBlinking) {
     // Left Eye Sphere
     const eyeGradL = ctx.createRadialGradient(-5.2, -21, 0.5, -4.5, -20, 3.8);
     eyeGradL.addColorStop(0, '#ffffff');
-    eyeGradL.addColorStop(0.8, '#ffffff');
-    eyeGradL.addColorStop(1, '#e2e8f0');
+    eyeGradL.addColorStop(0.85, '#ffffff');
+    eyeGradL.addColorStop(1, '#cbd5e1');
     ctx.fillStyle = eyeGradL;
     ctx.strokeStyle = '#0f172a';
     ctx.lineWidth = 1.4;
     ctx.beginPath();
-    ctx.arc(-4.5, -20, 3.6, 0, Math.PI * 2);
+    ctx.arc(-4.5, -20, 3.7, 0, Math.PI * 2);
     ctx.fill();
     ctx.stroke();
 
     // Right Eye Sphere
     const eyeGradR = ctx.createRadialGradient(3.8, -21, 0.5, 4.5, -20, 3.8);
     eyeGradR.addColorStop(0, '#ffffff');
-    eyeGradR.addColorStop(0.8, '#ffffff');
-    eyeGradR.addColorStop(1, '#e2e8f0');
+    eyeGradR.addColorStop(0.85, '#ffffff');
+    eyeGradR.addColorStop(1, '#cbd5e1');
     ctx.fillStyle = eyeGradR;
     ctx.beginPath();
-    ctx.arc(4.5, -20, 3.6, 0, Math.PI * 2);
+    ctx.arc(4.5, -20, 3.7, 0, Math.PI * 2);
     ctx.fill();
     ctx.stroke();
 
-    // Sharp Pupils tracking facing direction
+    // Pupils Tracking Movement / Facing
     ctx.fillStyle = '#0f172a';
     ctx.beginPath();
-    ctx.arc(-3.8, -20, 1.25, 0, Math.PI * 2);
-    ctx.arc(5.2, -20, 1.25, 0, Math.PI * 2);
+    ctx.arc(-3.8, -20, 1.3, 0, Math.PI * 2);
+    ctx.arc(5.2, -20, 1.3, 0, Math.PI * 2);
     ctx.fill();
 
-    // Specular Glint
+    // Specular Glints
     ctx.fillStyle = '#ffffff';
     ctx.beginPath();
-    ctx.arc(-4.2, -20.6, 0.5, 0, Math.PI * 2);
-    ctx.arc(4.8, -20.6, 0.5, 0, Math.PI * 2);
+    ctx.arc(-4.2, -20.6, 0.6, 0, Math.PI * 2);
+    ctx.arc(4.8, -20.6, 0.6, 0, Math.PI * 2);
     ctx.fill();
   } else {
     ctx.strokeStyle = '#0f172a';
@@ -2826,368 +2919,427 @@ function drawPS2CelShadedRick(ctx, p) {
     ctx.stroke();
   }
 
-  // Slender 3D Nose
+  // Slender Angular Nose
   ctx.strokeStyle = '#0f172a';
   ctx.lineWidth = 1.3;
   ctx.beginPath();
   ctx.moveTo(0, -21);
-  ctx.lineTo(1.6, -17.5);
+  ctx.lineTo(1.8, -17.5);
   ctx.lineTo(0, -16.5);
   ctx.stroke();
 
-  // Cynical Smirk Mouth with Teeth
+  // Cynical Smirk Mouth with White Teeth Row
   ctx.fillStyle = '#450a0a';
   ctx.strokeStyle = '#0f172a';
-  ctx.lineWidth = 1.2;
+  ctx.lineWidth = 1.3;
   ctx.beginPath();
-  ctx.arc(0, -12, 4.5, 0, Math.PI);
+  ctx.arc(0, -12, 4.8, 0, Math.PI);
   ctx.fill();
   ctx.stroke();
 
   ctx.fillStyle = '#ffffff';
-  ctx.fillRect(-2.5, -12, 5, 1.4);
+  ctx.fillRect(-2.8, -12, 5.6, 1.5);
 
-  // 3D Fluorescent Toxic Drool with Sphere Bubble
-  ctx.fillStyle = '#39ff14';
-  ctx.shadowColor = '#39ff14';
+  // 7. DYNAMIC SWINGING TOXIC GREEN DROOL (Physics-Driven Saliva with Highlight)
+  const droolSway = Math.sin(now / 140) * 1.2 + (vx * 0.25);
+  const droolStretch = isMoving ? 2.5 : 1;
+
+  ctx.fillStyle = '#84cc16';
+  ctx.shadowColor = '#a3e635';
   ctx.shadowBlur = 8;
   ctx.beginPath();
-  ctx.moveTo(1, -12);
-  ctx.lineTo(3.5, -12);
-  ctx.lineTo(3, -7.5);
-  ctx.lineTo(1.5, -7.5);
+  ctx.moveTo(1.2, -12);
+  ctx.lineTo(3.8, -12);
+  ctx.quadraticCurveTo(3.2 + droolSway, -8, 3.0 + droolSway, -6.5 * droolStretch);
+  ctx.lineTo(1.4 + droolSway, -6.5 * droolStretch);
   ctx.closePath();
   ctx.fill();
 
-  // Droplet with specular shine
+  // Teardrop bulb at the end of the drool stream
   ctx.beginPath();
-  ctx.arc(2.2, -6.5, 1.3, 0, Math.PI * 2);
+  ctx.arc(2.2 + droolSway, -5.5 * droolStretch, 1.4, 0, Math.PI * 2);
   ctx.fill();
   ctx.shadowBlur = 0;
 
-  ctx.fillStyle = '#ffffff';
+  // Specular shine dot on drool
+  ctx.fillStyle = '#ecfccb';
   ctx.beginPath();
-  ctx.arc(1.9, -6.9, 0.4, 0, Math.PI * 2);
+  ctx.arc(1.8 + droolSway, -5.8 * droolStretch, 0.45, 0, Math.PI * 2);
   ctx.fill();
 
   ctx.restore();
 }
 
 /**
- * 3D Volumetric Morty Smith
- * - 3D spherical head with spherical diffuse shading
- * - Sculpted curly hair clusters with 3D specular light caps
- * - Cylindrical yellow t-shirt with rounded belly volume
- * - 3D cylindrical denim jeans with knee seams and cuffs
- * - Two-handed blaster grip with cylindrical plasma chamber
- * - 3D Faceted Death Crystal octahedron when skill is active
+ * Modern High-Definition Morty Smith
+ * - 9-cluster sculpted curly brunette hair crown with warm specular highlights
+ * - Anxious emotion rig: wide reflective glossy eyes, quivering micro-pupils, wavy '3'-mouth
+ * - Animated cold sweat droplet beads on forehead
+ * - Modern yellow crew-neck shirt with collar rim and fabric crease depth
+ * - Textured indigo denim jeans with golden double-stitched seams and rolled ankle cuffs
+ * - Retro white skate sneakers with crimson stripe and dark rubber tread
+ * - Tactical dual-grip plasma blaster with status LED bar and recoil absorption
+ * - Rotating 3D amethyst Death Crystal octahedron with holographic clairvoyance field (Skill [E])
  */
 function drawPS2CelShadedMorty(ctx, p) {
   const { x, y, width, height, facing, runCycle, onGround, recoilTimer, skillActiveTimer, blinkTimer } = p;
-  const isMoving = Math.abs(p.vx) > 0.3;
+  const vx = p.vx || 0;
+  const _vy = p.vy || 0;
+  const isMoving = Math.abs(vx) > 0.3;
   const legCycle = onGround && isMoving ? runCycle : 0;
-  const bobbing = onGround && isMoving ? Math.sin(legCycle * 2) * 2.8 : Math.sin(Date.now() / 300) * 1.2;
+
+  const now = Date.now();
+  const breatheCycle = Math.sin(now / 220);
+  const idleBob = onGround && !isMoving ? breatheCycle * 1.2 : 0;
+  const runBob = onGround && isMoving ? Math.sin(legCycle * 2) * 2.8 : 0;
+  const spineLean = isMoving && onGround ? Math.max(-0.2, Math.min(0.2, vx * 0.032)) : 0;
 
   ctx.save();
-  ctx.translate(x + width / 2, y + height / 2 + bobbing);
+  ctx.translate(x + width / 2, y + height / 2 + idleBob + runBob);
   if (facing === 'left') {
     ctx.scale(-1, 1);
   }
+  ctx.rotate(spineLean);
 
-  // Death Crystal Matrix Holographic Field
+  // 0. DEATH CRYSTAL HOLOGRAPHIC CLAIRVOYANCE FIELD (Skill [E] Active)
   if (skillActiveTimer > 0) {
     ctx.save();
+    // Pulsing outer aura
     ctx.strokeStyle = '#c084fc';
     ctx.lineWidth = 3;
     ctx.shadowColor = '#c084fc';
-    ctx.shadowBlur = 20;
+    ctx.shadowBlur = 22;
     ctx.beginPath();
-    ctx.arc(0, -4, 28, 0, Math.PI * 2);
+    ctx.arc(0, -4, 29, 0, Math.PI * 2);
     ctx.stroke();
 
-    ctx.strokeStyle = 'rgba(216, 180, 254, 0.45)';
-    ctx.lineWidth = 1.5;
-    for (let m = 0; m < 6; m++) {
-      const angle = (m * Math.PI) / 3 + Date.now() / 350;
+    // Orbiting Runic Energy Rays
+    ctx.strokeStyle = 'rgba(216, 180, 254, 0.55)';
+    ctx.lineWidth = 1.6;
+    for (let m = 0; m < 8; m++) {
+      const angle = (m * Math.PI) / 4 + now / 300;
       ctx.beginPath();
-      ctx.moveTo(Math.cos(angle) * 18, Math.sin(angle) * 18 - 4);
-      ctx.lineTo(Math.cos(angle) * 28, Math.sin(angle) * 28 - 4);
+      ctx.moveTo(Math.cos(angle) * 19, Math.sin(angle) * 19 - 4);
+      ctx.lineTo(Math.cos(angle) * 29, Math.sin(angle) * 29 - 4);
       ctx.stroke();
     }
     ctx.restore();
   }
 
-  // 1. 3D CYLINDRICAL LEGS (Denim Jeans with Phong Shading + White Sneakers)
-  const leftLegAngle = onGround ? Math.sin(legCycle) * 0.6 : -0.25;
-  const rightLegAngle = onGround ? -Math.sin(legCycle) * 0.6 : 0.35;
+  // 1. SKELETAL LEGS (Indigo Denim Jeans with Double-Stitching & White Sneakers)
+  const leftLegAngle = onGround ? Math.sin(legCycle) * 0.62 : -0.28;
+  const rightLegAngle = onGround ? -Math.sin(legCycle) * 0.62 : 0.38;
 
-  // Left Leg Cylinder
-  ctx.save();
-  ctx.translate(-4, 11);
-  ctx.rotate(leftLegAngle);
+  // Helper: Draw single articulated Morty leg
+  const drawMortyLeg = (offsetX, legAngle) => {
+    ctx.save();
+    ctx.translate(offsetX, 11);
+    ctx.rotate(legAngle);
 
-  const jeanGradL = ctx.createLinearGradient(-2.5, 0, 2.5, 0);
-  jeanGradL.addColorStop(0, '#3b82f6');
-  jeanGradL.addColorStop(0.4, '#1d4ed8');
-  jeanGradL.addColorStop(1, '#1e3a8a');
-  ctx.fillStyle = jeanGradL;
-  ctx.strokeStyle = '#172554';
-  ctx.lineWidth = 1.3;
-  ctx.fillRect(-2.5, 0, 5, 11);
-  ctx.strokeRect(-2.5, 0, 5, 11);
+    // Indigo Denim Jeans Cylinder
+    const jeanGrad = ctx.createLinearGradient(-3, 0, 3, 0);
+    jeanGrad.addColorStop(0, '#3b82f6');
+    jeanGrad.addColorStop(0.35, '#1d4ed8');
+    jeanGrad.addColorStop(0.8, '#1e3a8a');
+    jeanGrad.addColorStop(1, '#172554');
+    ctx.fillStyle = jeanGrad;
+    ctx.strokeStyle = '#0f172a';
+    ctx.lineWidth = 1.3;
+    ctx.fillRect(-2.8, 0, 5.6, 12);
+    ctx.strokeRect(-2.8, 0, 5.6, 12);
 
-  // Ankle Cuff
-  ctx.fillStyle = '#60a5fa';
-  ctx.fillRect(-2.5, 9, 5, 2);
+    // Golden Thread Double-Stitch Seam
+    ctx.strokeStyle = '#eab308';
+    ctx.lineWidth = 0.8;
+    ctx.beginPath();
+    ctx.moveTo(1.8, 0);
+    ctx.lineTo(1.8, 10);
+    ctx.stroke();
 
-  // 3D White Sneaker with curved toe cap & sole
-  ctx.fillStyle = '#ffffff';
-  ctx.strokeStyle = '#94a3b8';
-  ctx.lineWidth = 1;
-  ctx.beginPath();
-  ctx.roundRect(-3, 10.5, 8, 4.5, [1, 2, 2, 1]);
-  ctx.fill();
-  ctx.stroke();
-  ctx.fillStyle = '#475569';
-  ctx.fillRect(-3, 14, 8, 1.2);
-  ctx.restore();
+    // Rolled Denim Ankle Cuff
+    ctx.fillStyle = '#60a5fa';
+    ctx.fillRect(-2.8, 9.5, 5.6, 2.5);
 
-  // Right Leg Cylinder
-  ctx.save();
-  ctx.translate(4, 11);
-  ctx.rotate(rightLegAngle);
+    // Retro White Skate Sneaker with Crimson Stripe
+    ctx.fillStyle = '#ffffff';
+    ctx.strokeStyle = '#94a3b8';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.roundRect(-3.2, 11.5, 8.8, 5, [1, 2, 2, 1]);
+    ctx.fill();
+    ctx.stroke();
 
-  const jeanGradR = ctx.createLinearGradient(-2.5, 0, 2.5, 0);
-  jeanGradR.addColorStop(0, '#3b82f6');
-  jeanGradR.addColorStop(0.4, '#1d4ed8');
-  jeanGradR.addColorStop(1, '#1e3a8a');
-  ctx.fillStyle = jeanGradR;
-  ctx.strokeStyle = '#172554';
-  ctx.lineWidth = 1.3;
-  ctx.fillRect(-2.5, 0, 5, 11);
-  ctx.strokeRect(-2.5, 0, 5, 11);
+    // Crimson Stripe
+    ctx.fillStyle = '#ef4444';
+    ctx.fillRect(-1.5, 12.8, 6.5, 1.4);
 
-  ctx.fillStyle = '#60a5fa';
-  ctx.fillRect(-2.5, 9, 5, 2);
+    // Dark Rubber Grip Tread
+    ctx.fillStyle = '#334155';
+    ctx.fillRect(-3.2, 15.5, 8.8, 1.2);
+    ctx.restore();
+  };
 
-  ctx.fillStyle = '#ffffff';
-  ctx.strokeStyle = '#94a3b8';
-  ctx.lineWidth = 1;
-  ctx.beginPath();
-  ctx.roundRect(-3, 10.5, 8, 4.5, [1, 2, 2, 1]);
-  ctx.fill();
-  ctx.stroke();
-  ctx.fillStyle = '#475569';
-  ctx.fillRect(-3, 14, 8, 1.2);
-  ctx.restore();
+  drawMortyLeg(-4.5, leftLegAngle);
+  drawMortyLeg(4.5, rightLegAngle);
 
-  // 2. 3D YELLOW T-SHIRT (Volumetric Torso with Belly Curvature & Fabric Folds)
-  const shirtGrad = ctx.createRadialGradient(-3, -2, 2, 0, 1, 12);
+  // 2. 3D YELLOW CREW-NECK T-SHIRT (Volumetric Torso with Fabric Folds)
+  const shirtGrad = ctx.createRadialGradient(-3, -2, 2, 0, 1, 13);
   shirtGrad.addColorStop(0, '#fef08a');
-  shirtGrad.addColorStop(0.5, '#facc15');
-  shirtGrad.addColorStop(0.9, '#eab308');
+  shirtGrad.addColorStop(0.45, '#facc15');
+  shirtGrad.addColorStop(0.85, '#eab308');
   shirtGrad.addColorStop(1, '#a16207');
   ctx.fillStyle = shirtGrad;
   ctx.strokeStyle = '#713f12';
   ctx.lineWidth = 1.5;
   ctx.beginPath();
-  ctx.roundRect(-9, -9, 18, 20, 4);
+  ctx.roundRect(-9.5, -9, 19, 21, 5);
   ctx.fill();
   ctx.stroke();
 
-  // Collar ring
+  // Ribbed Collar Ring
   ctx.strokeStyle = '#a16207';
-  ctx.lineWidth = 1.4;
+  ctx.lineWidth = 1.5;
   ctx.beginPath();
-  ctx.arc(0, -9, 4, 0, Math.PI);
+  ctx.arc(0, -9, 4.5, 0, Math.PI);
   ctx.stroke();
 
-  // 3. 3D TWO-HANDED BLASTER GRIP (Anxious combat stance)
-  const recoilOffset = recoilTimer > 0 ? -recoilTimer : 0;
-  ctx.save();
-  ctx.translate(7 + recoilOffset, -1);
+  // Fabric crease across lower abdomen
+  ctx.strokeStyle = 'rgba(113, 63, 18, 0.4)';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(-5, 6);
+  ctx.quadraticCurveTo(0, 7.5, 5, 6);
+  ctx.stroke();
 
-  // 3D Hands holding blaster
+  // 3. TACTICAL DUAL-GRIP RAYGUN & WEAPON RECOIL
+  const recoilOffset = recoilTimer > 0 ? -recoilTimer * 1.4 : 0;
+  const recoilAngle = recoilTimer > 0 ? -0.16 : 0;
+
+  ctx.save();
+  ctx.translate(8 + recoilOffset, 0);
+  ctx.rotate(recoilAngle);
+
+  // Left Arm (Stabilizing underneath)
   ctx.fillStyle = '#fee2e2';
+  ctx.strokeStyle = '#713f12';
+  ctx.lineWidth = 1.2;
+  ctx.beginPath();
+  ctx.roundRect(-6, 2, 10, 4, 2);
+  ctx.fill();
+  ctx.stroke();
+
+  // Blaster Chassis (Industrial Sci-Fi Yellow/Gunmetal)
+  const gunGrad = ctx.createLinearGradient(0, -4, 0, 4);
+  gunGrad.addColorStop(0, '#fef08a');
+  gunGrad.addColorStop(0.4, '#f59e0b');
+  gunGrad.addColorStop(0.8, '#475569');
+  gunGrad.addColorStop(1, '#1e293b');
+  ctx.fillStyle = gunGrad;
   ctx.strokeStyle = '#0f172a';
   ctx.lineWidth = 1.2;
   ctx.beginPath();
-  ctx.arc(-2, 0, 3, 0, Math.PI * 2);
-  ctx.arc(2, 2, 2.5, 0, Math.PI * 2);
+  ctx.roundRect(0, -4, 15, 7.5, [2, 3, 3, 2]);
   ctx.fill();
   ctx.stroke();
 
-  // 3D Metallic Blaster Chassis with Phong lighting
-  const blasterGrad = ctx.createLinearGradient(2, -4, 2, 2);
-  blasterGrad.addColorStop(0, '#e2e8f0');
-  blasterGrad.addColorStop(0.5, '#94a3b8');
-  blasterGrad.addColorStop(1, '#334155');
-  ctx.fillStyle = skillActiveTimer > 0 ? '#c084fc' : blasterGrad;
+  // Glowing Plasma Barrel Core
+  ctx.fillStyle = '#38bdf8';
+  ctx.shadowColor = '#38bdf8';
+  ctx.shadowBlur = 10;
+  ctx.fillRect(4, -2.5, 8, 4);
+  ctx.shadowBlur = 0;
+
+  // Front Muzzle Tip
+  ctx.fillStyle = '#1e293b';
+  ctx.fillRect(15, -3, 3, 5.5);
+  ctx.fillStyle = '#facc15';
+  ctx.fillRect(17, -1.8, 1.5, 3);
+
+  // Right Hand Trigger Grip
+  ctx.fillStyle = '#fee2e2';
   ctx.strokeStyle = '#0f172a';
   ctx.lineWidth = 1;
   ctx.beginPath();
-  ctx.roundRect(2, -4, 11, 5.5, [1, 2, 2, 1]);
+  ctx.arc(3, 0, 2.5, 0, Math.PI * 2);
   ctx.fill();
   ctx.stroke();
-
-  // Glowing Plasma Muzzle Tip
-  ctx.fillStyle = skillActiveTimer > 0 ? '#e9d5ff' : '#facc15';
-  ctx.shadowColor = skillActiveTimer > 0 ? '#c084fc' : '#facc15';
-  ctx.shadowBlur = 6;
-  ctx.fillRect(12, -3, 3, 3.5);
-  ctx.shadowBlur = 0;
   ctx.restore();
 
-  // 4. 3D SPHERICAL HEAD & SCULPTED CURLY HAIR
-  // Curly hair clusters with 3D specular shine
-  const hairGrad = ctx.createRadialGradient(-3, -22, 3, 0, -18, 15);
-  hairGrad.addColorStop(0, '#b45309');
-  hairGrad.addColorStop(0.5, '#78350f');
-  hairGrad.addColorStop(1, '#451a03');
-  ctx.fillStyle = hairGrad;
-  ctx.strokeStyle = '#290e02';
-  ctx.lineWidth = 1.6;
+  // 4. SCULPTED 9-CLUSTER CURLY BRUNETTE HAIR CROWN
+  // Individual volumetric curls overlapping smoothly
+  const curls = [
+    { x: -11, y: -18, r: 6.5 },
+    { x: -9, y: -25, r: 7.0 },
+    { x: -4, y: -29, r: 7.2 },
+    { x: 2, y: -30, r: 7.2 },
+    { x: 8, y: -27, r: 7.0 },
+    { x: 11, y: -20, r: 6.5 },
+    { x: 8, y: -14, r: 5.5 },
+    { x: -4, y: -24, r: 6.0 }, // Central volume
+    { x: 3, y: -24, r: 6.0 }
+  ];
 
-  ctx.beginPath();
-  ctx.arc(0, -18, 13.5, -Math.PI * 0.9, -Math.PI * 0.1);
-  ctx.arc(6, -24, 4.5, 0, Math.PI * 2);
-  ctx.arc(-2, -26, 5, 0, Math.PI * 2);
-  ctx.arc(-8, -23, 4.5, 0, Math.PI * 2);
-  ctx.closePath();
-  ctx.fill();
-  ctx.stroke();
+  curls.forEach((c) => {
+    const curlGrad = ctx.createRadialGradient(c.x - 2, c.y - 2, 1, c.x, c.y, c.r);
+    curlGrad.addColorStop(0, '#b45309');
+    curlGrad.addColorStop(0.5, '#78350f');
+    curlGrad.addColorStop(0.85, '#451a03');
+    curlGrad.addColorStop(1, '#290e02');
+    ctx.fillStyle = curlGrad;
+    ctx.strokeStyle = '#1c0a02';
+    ctx.lineWidth = 1.2;
+    ctx.beginPath();
+    ctx.arc(c.x, c.y, c.r, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
 
-  // Specular gloss arc on hair crown
-  ctx.strokeStyle = '#d97706';
-  ctx.lineWidth = 1.5;
-  ctx.beginPath();
-  ctx.arc(-2, -25, 3.5, Math.PI * 0.9, Math.PI * 1.8);
-  ctx.stroke();
+    // Specular Highlight Curls Cap
+    ctx.fillStyle = 'rgba(254, 243, 199, 0.4)';
+    ctx.beginPath();
+    ctx.arc(c.x - 1.5, c.y - 1.8, c.r * 0.35, 0, Math.PI * 2);
+    ctx.fill();
+  });
 
-  // Morty's Perfectly Spherical 3D Face
-  const faceGrad = ctx.createRadialGradient(-3, -18, 2, 0, -15, 12);
-  faceGrad.addColorStop(0, '#fff1f2');
-  faceGrad.addColorStop(0.55, '#fee2e2');
-  faceGrad.addColorStop(0.9, '#fecaca');
-  faceGrad.addColorStop(1, '#f87171');
-  ctx.fillStyle = faceGrad;
+  // 5. 3D SPHERICAL MORTY HEAD & ANXIOUS FACIAL RIGGING
+  const headGrad = ctx.createRadialGradient(-3, -19, 2, 0, -16, 13.5);
+  headGrad.addColorStop(0, '#fff1f2');
+  headGrad.addColorStop(0.45, '#fee2e2');
+  headGrad.addColorStop(0.85, '#fecaca');
+  headGrad.addColorStop(1, '#fca5a5');
+  ctx.fillStyle = headGrad;
   ctx.strokeStyle = '#0f172a';
   ctx.lineWidth = 1.6;
   ctx.beginPath();
-  ctx.arc(0, -15, 11.8, 0, Math.PI * 2);
+  ctx.arc(0, -16, 12.8, 0, Math.PI * 2);
   ctx.fill();
   ctx.stroke();
 
-  // Hair bangs
-  ctx.fillStyle = '#78350f';
+  // High-Arched Nervous Eyebrows (Trembling in Distress)
+  const browJitter = Math.sin(now / 110) * 0.6;
+  ctx.strokeStyle = '#78350f';
+  ctx.lineWidth = 1.6;
   ctx.beginPath();
-  ctx.arc(-5, -23, 3.5, 0, Math.PI);
-  ctx.arc(2, -24, 4, 0, Math.PI);
-  ctx.fill();
-
-  // Anxious worry eyebrows
-  ctx.strokeStyle = '#451a03';
-  ctx.lineWidth = 1.8;
+  ctx.arc(-4.5, -23 + browJitter, 3.8, Math.PI * 1.15, Math.PI * 1.85);
+  ctx.stroke();
   ctx.beginPath();
-  ctx.moveTo(-6, -21.5);
-  ctx.lineTo(-2, -22.5);
-  ctx.moveTo(2, -22.5);
-  ctx.lineTo(6, -21.5);
+  ctx.arc(4.5, -23 - browJitter, 3.8, Math.PI * 1.15, Math.PI * 1.85);
   ctx.stroke();
 
-  // 3D Spherical Big Eyes with Specular Highlights
+  // Giant Expressive 3D Eyes with Specular Highlights
   const isBlinking = blinkTimer > 172;
   if (!isBlinking) {
-    const eyeGradL = ctx.createRadialGradient(-4.8, -16, 0.5, -4, -15, 4.2);
+    // Left Eye
+    const eyeGradL = ctx.createRadialGradient(-3.5, -16, 0.5, -4, -15, 4.4);
     eyeGradL.addColorStop(0, '#ffffff');
-    eyeGradL.addColorStop(0.8, '#ffffff');
-    eyeGradL.addColorStop(1, '#e2e8f0');
+    eyeGradL.addColorStop(0.85, '#ffffff');
+    eyeGradL.addColorStop(1, '#cbd5e1');
     ctx.fillStyle = eyeGradL;
     ctx.strokeStyle = '#0f172a';
     ctx.lineWidth = 1.4;
     ctx.beginPath();
-    ctx.arc(-4, -15, 4.2, 0, Math.PI * 2);
+    ctx.arc(-4, -15, 4.3, 0, Math.PI * 2);
     ctx.fill();
     ctx.stroke();
 
-    const eyeGradR = ctx.createRadialGradient(3.2, -16, 0.5, 4, -15, 4.2);
+    // Right Eye
+    const eyeGradR = ctx.createRadialGradient(3.5, -16, 0.5, 4, -15, 4.4);
     eyeGradR.addColorStop(0, '#ffffff');
-    eyeGradR.addColorStop(0.8, '#ffffff');
-    eyeGradR.addColorStop(1, '#e2e8f0');
+    eyeGradR.addColorStop(0.85, '#ffffff');
+    eyeGradR.addColorStop(1, '#cbd5e1');
     ctx.fillStyle = eyeGradR;
     ctx.beginPath();
-    ctx.arc(4, -15, 4.2, 0, Math.PI * 2);
+    ctx.arc(4, -15, 4.3, 0, Math.PI * 2);
     ctx.fill();
     ctx.stroke();
 
-    // Nervous jittery black pupil dots
+    // Jittery Nervous Pupils (Reacting to Danger)
+    const pupilJitter = Math.sin(now / 80) * 0.35;
     ctx.fillStyle = '#0f172a';
     ctx.beginPath();
-    ctx.arc(-3.4, -15, 1.4, 0, Math.PI * 2);
-    ctx.arc(4.6, -15, 1.4, 0, Math.PI * 2);
+    ctx.arc(-3.5 + pupilJitter, -15, 1.4, 0, Math.PI * 2);
+    ctx.arc(4.5 + pupilJitter, -15, 1.4, 0, Math.PI * 2);
     ctx.fill();
 
+    // Glossy Specular Glints
     ctx.fillStyle = '#ffffff';
     ctx.beginPath();
-    ctx.arc(-3.8, -15.5, 0.4, 0, Math.PI * 2);
-    ctx.arc(4.2, -15.5, 0.4, 0, Math.PI * 2);
+    ctx.arc(-3.9, -15.6, 0.5, 0, Math.PI * 2);
+    ctx.arc(4.1, -15.6, 0.5, 0, Math.PI * 2);
     ctx.fill();
   } else {
     ctx.strokeStyle = '#0f172a';
     ctx.lineWidth = 1.6;
     ctx.beginPath();
-    ctx.moveTo(-6, -15);
+    ctx.moveTo(-6.5, -15);
     ctx.lineTo(-1.5, -15);
     ctx.moveTo(1.5, -15);
-    ctx.lineTo(6, -15);
+    ctx.lineTo(6.5, -15);
     ctx.stroke();
   }
 
-  // Round Nose
+  // Round Button Nose
   ctx.strokeStyle = '#0f172a';
   ctx.lineWidth = 1.3;
   ctx.beginPath();
   ctx.arc(0, -13, 1.5, 0, Math.PI);
   ctx.stroke();
 
-  // Morty's Trembling Wavy '3'-Shaped / Frown Mouth
+  // Iconic Trembling Wavy '3'-Shaped / Gritted Frown Mouth
   ctx.strokeStyle = '#0f172a';
   ctx.lineWidth = 1.4;
   ctx.beginPath();
-  ctx.moveTo(-3.5, -8.5);
-  ctx.quadraticCurveTo(-1.5, -10, 0, -8.5);
-  ctx.quadraticCurveTo(1.5, -10, 3.5, -8.5);
+  ctx.moveTo(-3.8, -8.5);
+  ctx.quadraticCurveTo(-1.8, -10, 0, -8.5);
+  ctx.quadraticCurveTo(1.8, -10, 3.8, -8.5);
   ctx.stroke();
 
-  // Cold Sweat Droplet
+  // Animated Cold Sweat Droplet
+  const sweatDropY = -19.5 + Math.sin(now / 200) * 1.2;
   ctx.fillStyle = '#38bdf8';
   ctx.shadowColor = '#38bdf8';
-  ctx.shadowBlur = 4;
+  ctx.shadowBlur = 5;
   ctx.beginPath();
-  ctx.arc(-8.5, -19.5, 1.8, 0, Math.PI * 2);
+  ctx.arc(-8.5, sweatDropY, 1.8, 0, Math.PI * 2);
   ctx.fill();
   ctx.shadowBlur = 0;
 
-  // 3D Faceted Death Crystal (When Skill Active)
+  // 6. 3D POLYHEDRAL AMETHYST DEATH CRYSTAL (Skill [E] Active)
   if (skillActiveTimer > 0) {
-    const cryGrad = ctx.createLinearGradient(-3.5, -25, 3.5, -18);
-    cryGrad.addColorStop(0, '#e9d5ff');
-    cryGrad.addColorStop(0.5, '#a855f7');
-    cryGrad.addColorStop(1, '#6b21a8');
+    const crystalSpin = now / 250;
+    ctx.save();
+    ctx.translate(0, -26);
+    ctx.rotate(crystalSpin);
+
+    // Multi-faceted Octahedron
+    const cryGrad = ctx.createLinearGradient(-4, -6, 4, 6);
+    cryGrad.addColorStop(0, '#f3e8ff');
+    cryGrad.addColorStop(0.4, '#c084fc');
+    cryGrad.addColorStop(0.8, '#7e22ce');
+    cryGrad.addColorStop(1, '#3b0764');
     ctx.fillStyle = cryGrad;
     ctx.strokeStyle = '#ffffff';
-    ctx.lineWidth = 1.5;
+    ctx.lineWidth = 1.4;
     ctx.shadowColor = '#c084fc';
-    ctx.shadowBlur = 14;
+    ctx.shadowBlur = 16;
+
     ctx.beginPath();
-    ctx.moveTo(0, -25);
-    ctx.lineTo(3.5, -21.5);
-    ctx.lineTo(0, -18);
-    ctx.lineTo(-3.5, -21.5);
+    ctx.moveTo(0, -6);
+    ctx.lineTo(5, 0);
+    ctx.lineTo(0, 6);
+    ctx.lineTo(-5, 0);
     ctx.closePath();
     ctx.fill();
     ctx.stroke();
-    ctx.shadowBlur = 0;
+
+    // Internal facet crease
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.7)';
+    ctx.beginPath();
+    ctx.moveTo(0, -6);
+    ctx.lineTo(0, 6);
+    ctx.moveTo(-5, 0);
+    ctx.lineTo(5, 0);
+    ctx.stroke();
+    ctx.restore();
   }
 
   ctx.restore();
