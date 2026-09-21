@@ -1,65 +1,33 @@
-import { Link } from 'react-router-dom';
-import StatusBadge from './StatusBadge';
-import FavoriteButton from './FavoriteButton';
-
 /**
  * CharacterCard Component
- * Displays character overview card with interactive hover effects, status badge and details link.
- * Receives data cleanly via props.
+ * Reusable character card presenting entity details fetched from Rick and Morty API.
  */
-export default function CharacterCard({ character }) {
+export default function CharacterCard({ character, role = 'Entity', points = 100 }) {
   if (!character) return null;
 
-  const { id, name, status, species, location, image } = character;
-  const locationName = location?.name || 'Unknown Location';
+  const { id, name, status, species, image, location } = character;
 
   return (
-    <article className="character-card" data-testid={`character-card-${id}`}>
-      <div className="card-image-wrapper">
-        <img
-          src={image}
-          alt={name}
-          className="card-image"
-          loading="lazy"
-        />
-        <div className="card-top-overlay">
-          <span className="card-id-badge">#{id}</span>
-          <FavoriteButton character={character} />
-        </div>
+    <article className="game-character-card" data-testid={`char-card-${id}`}>
+      <div className="char-card-img-wrap">
+        <img src={image} alt={name} className="char-card-img" loading="lazy" />
+        <span className="char-role-badge">{role}</span>
       </div>
 
-      <div className="card-body">
-        <div className="card-header-info">
-          <h3 className="card-name" title={name}>
-            {name}
-          </h3>
-          <div className="card-status-row">
-            <StatusBadge status={status} />
-          </div>
+      <div className="char-card-body">
+        <h4 className="char-card-name" title={name}>
+          {name}
+        </h4>
+        <div className="char-card-meta">
+          <span>{species} &bull; {status}</span>
         </div>
-
-        <div className="card-meta-list">
-          <div className="meta-item">
-            <span className="meta-label">Species</span>
-            <span className="meta-value">{species || 'Unknown'}</span>
+        {location?.name && (
+          <div className="char-card-location">
+            <span className="loc-label">Ubicación:</span> {location.name}
           </div>
-          <div className="meta-item">
-            <span className="meta-label">Last Known Location</span>
-            <span className="meta-value" title={locationName}>
-              {locationName}
-            </span>
-          </div>
-        </div>
-
-        <div className="card-actions">
-          <Link
-            to={`/personajes/${id}`}
-            className="btn-inspect"
-            aria-label={`Inspect multiverse records for ${name}`}
-          >
-            <span>Inspect Entity</span>
-            <span aria-hidden="true">→</span>
-          </Link>
+        )}
+        <div className="char-card-points">
+          <span>VALOR: <strong>+{points} PTS</strong></span>
         </div>
       </div>
     </article>
