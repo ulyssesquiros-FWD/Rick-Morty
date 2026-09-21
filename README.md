@@ -1,102 +1,102 @@
-# Rick & Morty — Multiverse Explorer 🌌
+# Rick & Morty: Dimension Raid 🌌🎮
 
-Aplicación frontend moderna desarrollada en **React** que consume de forma reactiva y en tiempo real la API REST oficial de **Rick and Morty** ([https://rickandmortyapi.com/api](https://rickandmortyapi.com/api)). Diseñada con una temática inmersiva de ciencia ficción, portales interdimensionales, estética neón y una arquitectura modular y escalable.
+**Quiz #5 — Desarrollo Web Frontend: Videojuego 2D con React + Consumo de Datos + n8n**
 
----
-
-## 🚀 Tecnologías Utilizadas
-
-- **React 19** (Functional Components, Hooks: `useState`, `useEffect`, `useCallback`, `useMemo`, `useContext`)
-- **Vite** (Bundler ultrarrápido y entorno de desarrollo)
-- **React Router DOM v7** (Enrutamiento declarativo y sincronización con URL search params)
-- **Fetch API nativo & AbortController** (Consumo asíncrono con cancelación de peticiones obsoletas)
-- **CSS Puro (Vanilla CSS Moderno)** (Variables CSS, CSS Grid, Flexbox, Glassmorphism, animaciones de portales e interfaces dimensionales, `@media (prefers-reduced-motion)`)
-- **LocalStorage Web API** (Persistencia local reactiva del baúl de personajes favoritos)
+Videojuego arcade 2D de acción lateral inspirado en clásicos tipo *Contra*, completamente tematizado en el universo de **Rick and Morty**. El jugador controla a **Rick Sanchez**, atraviesa dimensiones paralelas, derrota oleadas de enemigos generados dinámicamente desde la **Rick and Morty API**, enfrenta jefes dimensionales, registra sus puntuaciones en un backend local con **json-server** y clasifica sus resultados mediante un workflow automatizado en **n8n**.
 
 ---
 
-## 🛠️ Instalación y Ejecución
+## 🚀 Tecnologías y Herramientas
 
-### Prerrequisitos
-- Node.js (v18 o superior)
-- npm o yarn
+- **React 19** (Functional Components, Hooks: `useState`, `useEffect`, `useRef`, `useCallback`, `useMemo`, `useContext`)
+- **HTML5 Canvas 2D & requestAnimationFrame** (Motor de físicas, colisiones AABB, partículas y renderizado de sprites)
+- **React Router DOM v7** (Enrutamiento dinámico `/nivel/:num`, `/niveles`, `/leaderboard`, etc.)
+- **CSS3 Moderno** (Variables CSS, Glassmorphism, animaciones espaciales y soporte responsive/móvil)
+- **Rick and Morty API** (`https://rickandmortyapi.com/api` — Consumo real de personajes y avatares)
+- **json-server** (`http://localhost:3001/scores` — Backend REST local para puntuaciones)
+- **n8n Automation** (`http://localhost:5678/webhook/dimension-raid-score` — Webhook de clasificación)
+- **Canvas-Confetti** (Efectos visuales en victoria dimensional)
 
-### 1. Clonar o acceder al directorio del proyecto:
-```bash
-cd "c:/Users/dell5/UQV/Rick&Morty"
-```
+---
 
-### 2. Instalar dependencias:
+## 🕹️ Mecánicas del Juego y Controles
+
+### Controles de Escritorio:
+- **A / D** o **← / →**: Moverse a la izquierda / derecha.
+- **W** o **↑**: Saltar.
+- **SPACE** o **J**: Disparar pistola de portal (láser de plasma).
+- **ESC**: Pausar / Reanudar la partida.
+
+### Controles Móviles / Tablet:
+- **D-Pad Táctil en Pantalla**: Botones ◀ y ▶ para movimiento.
+- **Botones de Acción Táctil**: ▲ para salto y ⚡ para disparo continuo.
+
+### Sistema de Puntuación:
+- **Enemigo regular (Mr. Meeseeks):** +100 pts
+- **Enemigo volador (Corrupted Birdperson):** +175 pts
+- **Enemigo élite (Gromflomite):** +250 pts
+- **Jefe de nivel:** +600 pts
+- **Completar nivel:** +1000 pts (+ bonificación de vidas y tiempo)
+
+---
+
+## 🛠️ Instalación y Puesta en Marcha
+
+### 1. Clonar e instalar dependencias:
 ```bash
 npm install
 ```
 
-### 3. Configurar variables de entorno:
-El archivo `.env` ya viene configurado con el endpoint de la API:
+### 2. Configurar variables de entorno:
+El archivo `.env` ya viene configurado con los endpoints locales y remotos:
 ```env
-VITE_RICK_MORTY_API_URL=https://rickandmortyapi.com/api
+VITE_API_URL=http://localhost:3001
+VITE_RICK_MORTY_API=https://rickandmortyapi.com/api
+VITE_N8N_WEBHOOK_URL=http://localhost:5678/webhook/dimension-raid-score
 ```
-*(También se proporciona `.env.example` como plantilla)*
 
-### 4. Iniciar el servidor de desarrollo:
+### 3. Iniciar el backend local (json-server):
+En una terminal secundaria:
+```bash
+npm run server
+# o directamente: npx json-server --watch db.json --port 3001
+```
+
+### 4. Iniciar n8n (Opcional para automatización):
+```bash
+npx n8n
+# Importar el archivo n8n/dimension-raid-score-workflow.json en http://localhost:5678
+```
+
+### 5. Iniciar la aplicación React (Vite):
 ```bash
 npm run dev
 ```
 
-### 5. Compilar para producción y validación:
-```bash
-npm run build
-```
+---
 
-### 6. Ejecutar linter:
-```bash
-npm run lint
-```
+## 🌐 Endpoints y Flujo de Datos
+
+1. **Rick and Morty API (`GET`)**:
+   - `GET https://rickandmortyapi.com/api/character/1,2,3,8,144,242...`
+   - Alimenta los assets del jugador (Rick), compañero (Morty) y enemigos en el canvas.
+2. **Leaderboard Backend (`GET`)**:
+   - `GET http://localhost:3001/scores`
+   - Consulta el historial de mejores puntuaciones.
+3. **Guardado de Partida (`POST`)**:
+   - `POST http://localhost:3001/scores`
+   - Envía el registro de jugador, puntuación, nivel, enemigos y duración.
+4. **Automatización n8n (`POST`)**:
+   - `POST http://localhost:5678/webhook/dimension-raid-score`
+   - Clasifica la partida en **DIMENSION MASTER** (score >= 1000) o **PORTAL ROOKIE** y asigna recompensas.
 
 ---
 
-## 🌐 API y Endpoints Consumidos
+## 🪐 Niveles de Juego
 
-Base URL: `https://rickandmortyapi.com/api`
-
-- **Listado y Búsqueda con Paginación**:
-  - `GET /character/?page={n}`
-  - `GET /character/?page={n}&name={nombre}`
-  - `GET /character/?page={n}&name={nombre}&status={alive|dead|unknown}`
-- **Detalle Individual por ID**:
-  - `GET /character/{id}`
-- **Carga Múltiple por IDs**:
-  - `GET /character/{id1,id2,...}`
-
----
-
-## ✨ Funcionalidades Principales
-
-1. **Explorador Multiversal (`/personajes`)**:
-   - Listado completo de personajes provenientes de la API en vivo.
-   - Paginación dinámica conectada con la metadata devuelta por la API (`info.pages`, `info.count`, `info.next`, `info.prev`).
-   - Contador visual de entidades detectadas en el multiverso.
-2. **Búsqueda y Filtros en Tiempo Real**:
-   - Barra de búsqueda temática por nombre con botones de *Search* y *Clear*.
-   - Filtro por estado vital (*All*, *Alive*, *Dead*, *Unknown*).
-   - Manejo de respuestas 404 cuando una búsqueda no arroja resultados ("*DIMENSION NOT FOUND*").
-3. **Expediente / Detalle Individual (`/personajes/:id`)**:
-   - Consulta directa del personaje mediante su identificador en la API.
-   - Dossier interactivo con avatar en aura de portal dimensional, especie, género, dimensión de origen, ubicación actual, conteo de episodios y marca de tiempo.
-   - Botón de retorno al explorador y botón de guardado en favoritos.
-4. **Baúl de Favoritos (`/favoritos`)**:
-   - Guardado y eliminación reactiva de personajes en `localStorage`.
-   - Contador sincronizado en vivo en la barra de navegación (`Navbar`).
-   - Estado visual temático cuando el baúl está vacío.
-5. **Portal Hero Interactivo (`/`)**:
-   - Landing page con portal animado en CSS, estadísticas del multiverso y accesos directos.
-6. **Manejo Integral de Estados**:
-   - **Loader temático**: Portal interdimensional giratorio con anillos de energía neón.
-   - **Error Handling**: Gestión amigable de errores de red, dimensiones inexistentes y fallas de conexión con opción de reintento (*Try Again*).
-   - **Control de Peticiones Asíncronas**: Uso de `AbortController` para prevenir *race conditions* y cancelaciones limpias.
-7. **Diseño Responsivo y Accesible**:
-   - Adaptable a Desktop (4 columnas), Tablets (2-3 columnas) y Móviles (1 columna).
-   - Soporte para usuarios con preferencia de movimiento reducido (`prefers-reduced-motion`).
+- **Nivel 1 — Earth C-137 (`/nivel/1`):** Terreno tóxico suburbano. Enemigos Meeseeks y Gromflomites. Jefe: *Alpha Mr. Meeseeks*.
+- **Nivel 2 — Citadel of Ricks (`/nivel/2`):** Cuadrícula de seguridad cibernética. Plataformas magnéticas y drones. Jefe: *Cyber Birdperson*.
+- **Nivel 3 — Final Dimension (`/nivel/3`):** Fractura del multiverso. Velocidad extrema de enemigos. Jefe: *Evil Morty con Cañón Dimensional*.
 
 ---
 
@@ -104,39 +104,57 @@ Base URL: `https://rickandmortyapi.com/api`
 
 ```text
 src/
-├── assets/                  # Iconos y recursos estáticos
-├── components/              # Componentes reutilizables
-│   ├── CharacterCard.jsx    # Tarjeta de presentación de entidad con hover y glow
-│   ├── CharacterDetail.jsx  # Vista detallada de expediente y aura de portal
-│   ├── CharacterGrid.jsx    # Grid responsivo de tarjetas
-│   ├── ErrorMessage.jsx     # Mensajes temáticos de error y estados vacíos
-│   ├── FavoriteButton.jsx   # Botón interactivo de guardado de favoritos
-│   ├── Footer.jsx           # Pie de página temático y créditos
-│   ├── Hero.jsx             # Sección Hero con portal animado y estadísticas
-│   ├── Loader.jsx           # Spinner de portal dimensional
-│   ├── Navbar.jsx           # Barra de navegación con contador de favoritos
-│   ├── Pagination.jsx       # Control de navegación entre páginas
-│   ├── SearchBar.jsx        # Buscador y filtros de estado
-│   └── StatusBadge.jsx      # Indicador de estado (Alive, Dead, Unknown)
-├── config/
-│   └── api.js               # Configuración centralizada de endpoints y URLs base
+├── components/              # Componentes UI reutilizables
+│   ├── CharacterCard.jsx    # Tarjeta de personaje con rol y puntos
+│   ├── Enemy.jsx            # Expediente de amenaza enemiga
+│   ├── ErrorState.jsx       # Componente de error con reintento
+│   ├── GameBoard.jsx        # Canvas 2D y loop de físicas
+│   ├── GameControls.jsx     # Atajos de teclado y botones táctiles
+│   ├── GameHUD.jsx          # HUD arcade en tiempo real (vidas, puntos, salud)
+│   ├── GameOverModal.jsx    # Modal de Victoria / Game Over con n8n
+│   ├── Leaderboard.jsx      # Tabla interactiva y ordenada de puntajes
+│   ├── LevelSelector.jsx    # Selector de portales dimensionales
+│   ├── LoadingState.jsx     # Loader temático de portal
+│   ├── Navbar.jsx           # Barra de navegación con badge de agente
+│   ├── Player.jsx           # Ficha de estadísticas de Rick
+│   ├── Projectile.jsx       # Ficha de armamento de energía
+│   └── Footer.jsx           # Pie de página temático
 ├── context/
-│   └── FavoritesContext.jsx # Contexto global para gestión de favoritos y localStorage
-├── pages/                   # Vistas principales de la aplicación
-│   ├── Characters.jsx       # Página del explorador de personajes (/personajes)
-│   ├── CharacterDetailPage.jsx # Página de detalle individual (/personajes/:id)
-│   ├── Favorites.jsx        # Página de favoritos (/favoritos)
-│   ├── Home.jsx             # Landing page principal (/)
-│   └── NotFound.jsx         # Página 404 para dimensiones desconocidas (*)
+│   └── GameContext.jsx      # Estado global, persistencia de score y n8n
+├── data/
+│   └── gameConfig.js        # Configuración de niveles, plataformas y físicas
+├── hooks/
+│   ├── useGameEngine.js     # Motor 2D con requestAnimationFrame y colisiones
+│   ├── useGameTimer.js      # Temporizador de misión
+│   └── useRickMorty.js      # Hook para carga de sprites desde la API
+├── pages/
+│   ├── Home.jsx             # Portada arcade y selección de agente (/)
+│   ├── Game.jsx             # Pantalla de juego dinámica (/nivel/:num)
+│   ├── Levels.jsx           # Selector de dimensiones (/niveles)
+│   ├── LeaderboardPage.jsx  # Salón de la fama multiversal (/leaderboard)
+│   └── NotFound.jsx         # Página 404 para dimensiones perdidas (*)
 ├── routes/
-│   └── AppRoutes.jsx        # Definición y centralización de rutas de la app
+│   └── AppRoutes.jsx        # Definición centralizada de rutas
 ├── services/
-│   └── api/
-│       └── rickAndMortyApi.js # Capa de servicio con fetch, async/await y control de errores
+│   ├── n8nService.js        # Integración con el webhook de n8n
+│   ├── rickMortyService.js  # Consumo de la Rick and Morty API
+│   └── scoreService.js      # Consumo GET y POST de json-server
 ├── styles/
-│   ├── components.css       # Estilos específicos de componentes y vistas
-│   ├── index.css            # Estilos base, reseteo, fondo cósmico y keyframes
-│   └── variables.css        # Tokens de diseño, paleta Rick & Morty y tipografías
-├── App.jsx                  # Envoltura principal, Router, Layout y Providers
-└── main.jsx                 # Punto de entrada de la aplicación React
+│   ├── components.css       # Estilos modulares de componentes
+│   ├── game.css             # Estilos de HUD, Canvas y modal
+│   ├── home.css             # Estilos de la portada y briefing
+│   ├── index.css            # Estilos base y fondo estelar
+│   ├── leaderboard.css      # Estilos de tabla de líderes
+│   └── variables.css        # Tokens de diseño y colores neón
+├── App.jsx                  # Envoltura principal con Providers y Layout
+└── main.jsx                 # Punto de entrada de React
 ```
+
+---
+
+## 📑 Documentación Adicional
+
+- [docs/rubrica-checklist.md](docs/rubrica-checklist.md): Mapeo punto por punto de los 100 puntos de la rúbrica del Quiz #5.
+- [docs/n8n.md](docs/n8n.md): Detalle técnico del flujo de n8n y pruebas con cURL.
+- [docs/n8n-workflow.svg](docs/n8n-workflow.svg): Diagrama visual de la arquitectura del webhook.
+- [n8n/dimension-raid-score-workflow.json](n8n/dimension-raid-score-workflow.json): Definición JSON del workflow importable.
