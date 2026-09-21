@@ -2758,72 +2758,77 @@ function drawPS2CelShadedRick(ctx, p) {
   ctx.stroke();
   ctx.restore();
 
-  // 5. 3D SCULPTED HAIR DOME (14 Volumetric Spikes with Facet Bevels)
-  // Layer 1: Ambient Shadow (Deep Azure / Dark Cyan)
-  const hairBackGrad = ctx.createLinearGradient(0, -36, 0, -10);
-  hairBackGrad.addColorStop(0, '#0284c7');
-  hairBackGrad.addColorStop(1, '#0369a1');
-  ctx.fillStyle = hairBackGrad;
-  ctx.strokeStyle = '#075985';
-  ctx.lineWidth = 1.4;
-
-  const spikeAnglesBack = [
-    -Math.PI * 0.95, -Math.PI * 0.68, -Math.PI * 0.42,
-    -Math.PI * 0.15, Math.PI * 0.1, Math.PI * 0.35, Math.PI * 0.62
-  ];
+  // 5. CANONICAL RICK HAIR SILHOUETTE (Exact Show Model Sheet from Starburns Industries)
+  ctx.save();
+  ctx.fillStyle = '#a6d5e8'; // Canonical periwinkle powder-blue from the series
+  ctx.strokeStyle = '#0f172a';
+  ctx.lineWidth = 1.8;
+  ctx.lineJoin = 'miter';
+  ctx.miterLimit = 3;
 
   ctx.beginPath();
-  ctx.moveTo(0, -22);
-  spikeAnglesBack.forEach((angle) => {
-    const tipDist = 25 + (Math.abs(Math.sin(angle * 3)) * 4.8);
-    ctx.lineTo(Math.cos(angle) * tipDist, -22 + Math.sin(angle) * tipDist);
-  });
+  // Start at front-right sideburn (just behind the eye)
+  ctx.moveTo(8.5, -16);
+  // Spike 1: Lower front sideburn spike
+  ctx.lineTo(16, -18);
+  ctx.lineTo(8.5, -21.5);
+  // Spike 2: Front temple spike
+  ctx.lineTo(17.5, -25.5);
+  ctx.lineTo(8, -28);
+  // Spike 3: Upper front spike
+  ctx.lineTo(16.5, -34);
+  ctx.lineTo(6, -32);
+  // Spike 4: Front crown spike
+  ctx.lineTo(11.5, -40);
+  ctx.lineTo(2.5, -34);
+  // Spike 5: Top center crown spike (highest point)
+  ctx.lineTo(0.5, -44);
+  ctx.lineTo(-3.5, -34);
+  // Spike 6: Top back spike
+  ctx.lineTo(-8.5, -41);
+  ctx.lineTo(-7.5, -31);
+  // Spike 7: Upper back spike
+  ctx.lineTo(-17.5, -35);
+  ctx.lineTo(-10, -26);
+  // Spike 8: Mid-back upper spike
+  ctx.lineTo(-21, -26);
+  ctx.lineTo(-10.5, -20);
+  // Spike 9: Mid-back lower spike
+  ctx.lineTo(-19.5, -18);
+  ctx.lineTo(-9.5, -14);
+  // Spike 10: Lower back spike
+  ctx.lineTo(-16.5, -11.5);
+  ctx.lineTo(-8, -8.5);
+  // Spike 11: Nape of neck spike
+  ctx.lineTo(-12, -5.5);
+  ctx.lineTo(-4.5, -6.5);
+  // Close behind the skull into the neck
+  ctx.lineTo(2, -10);
   ctx.closePath();
   ctx.fill();
   ctx.stroke();
 
-  // Layer 2: Foreground Volumetric Spikes with Dynamic Light
-  const hairForeGrad = ctx.createRadialGradient(-6, -28, 4, 0, -22, 26);
-  hairForeGrad.addColorStop(0, '#ffffff');
-  hairForeGrad.addColorStop(0.3, '#cffafe');
-  hairForeGrad.addColorStop(0.7, '#7dd3fc');
-  hairForeGrad.addColorStop(1, '#0284c7');
-  ctx.fillStyle = hairForeGrad;
-  ctx.strokeStyle = '#0369a1';
-  ctx.lineWidth = 1.6;
-
-  const spikeAnglesFore = [
-    -Math.PI * 0.82, -Math.PI * 0.54, -Math.PI * 0.28,
-    -Math.PI * 0.02, Math.PI * 0.22, Math.PI * 0.48, Math.PI * 0.78
-  ];
-
+  // Subtle canonical cel-shade shadow on the lower-back hair spikes
+  ctx.fillStyle = 'rgba(138, 192, 214, 0.45)';
   ctx.beginPath();
-  ctx.moveTo(0, -22);
-  spikeAnglesFore.forEach((angle) => {
-    const tipDist = 24 + (Math.abs(Math.sin(angle * 3)) * 4.2);
-    ctx.lineTo(Math.cos(angle) * tipDist, -22 + Math.sin(angle) * tipDist);
-  });
+  ctx.moveTo(-4.5, -6.5);
+  ctx.lineTo(-12, -5.5);
+  ctx.lineTo(-8, -8.5);
+  ctx.lineTo(-16.5, -11.5);
+  ctx.lineTo(-9.5, -14);
+  ctx.lineTo(-19.5, -18);
+  ctx.lineTo(-10.5, -20);
+  ctx.lineTo(-4, -16);
   ctx.closePath();
   ctx.fill();
-  ctx.stroke();
+  ctx.restore();
 
-  // Internal Spikes Ridge Bevel Lines (MultiVersus / ArcSys 3D Crease)
-  ctx.strokeStyle = 'rgba(255, 255, 255, 0.45)';
-  ctx.lineWidth = 1.2;
-  spikeAnglesFore.forEach((angle) => {
-    const tipDist = 21;
-    ctx.beginPath();
-    ctx.moveTo(Math.cos(angle) * 11, -22 + Math.sin(angle) * 11);
-    ctx.lineTo(Math.cos(angle) * tipDist, -22 + Math.sin(angle) * tipDist);
-    ctx.stroke();
-  });
-
-  // 6. RICK'S 3D ELLIPSOIDAL HEAD & FACIAL RIGGING
+  // 6. RICK'S CANONICAL HEAD & BALD FOREHEAD DOME
   const headGrad = ctx.createRadialGradient(-3.5, -24, 2, 0, -20, 15);
-  headGrad.addColorStop(0, '#fff1f2');
-  headGrad.addColorStop(0.45, '#fee2e2');
-  headGrad.addColorStop(0.85, '#fecaca');
-  headGrad.addColorStop(1, '#fca5a5');
+  headGrad.addColorStop(0, '#ece9df'); // Canonical pale grayish-tan skin
+  headGrad.addColorStop(0.55, '#e0ded4');
+  headGrad.addColorStop(0.9, '#d6d2c6');
+  headGrad.addColorStop(1, '#c5bfb2');
   ctx.fillStyle = headGrad;
   ctx.strokeStyle = '#0f172a';
   ctx.lineWidth = 1.6;
@@ -2832,15 +2837,15 @@ function drawPS2CelShadedRick(ctx, p) {
   ctx.fill();
   ctx.stroke();
 
-  // Bald Hairline Arch Above Forehead
-  ctx.strokeStyle = '#0284c7';
+  // Bald Hairline Arch Above Forehead (Defining the bare skull)
+  ctx.strokeStyle = '#0f172a';
   ctx.lineWidth = 1.2;
   ctx.beginPath();
   ctx.arc(0, -22.5, 11.2, -Math.PI * 0.8, -Math.PI * 0.2);
   ctx.stroke();
 
   // Forehead Age Creases
-  ctx.strokeStyle = '#94a3b8';
+  ctx.strokeStyle = '#9e988d';
   ctx.lineWidth = 1.2;
   ctx.beginPath();
   ctx.arc(0, -28.5, 6, Math.PI * 0.2, Math.PI * 0.8);
@@ -2849,13 +2854,14 @@ function drawPS2CelShadedRick(ctx, p) {
   ctx.arc(0, -26.5, 7, Math.PI * 0.25, Math.PI * 0.75);
   ctx.stroke();
 
-  // Expressive Segmented Cyan Unibrow (Angles in Combat/Shooting)
+  // Canonical Powder-Blue Unibrow (Matches hair color with black outline)
   const browTension = recoilTimer > 0 ? 2 : 0;
-  ctx.strokeStyle = '#0e7490';
-  ctx.lineWidth = 3.2;
+  ctx.fillStyle = '#a6d5e8';
+  ctx.strokeStyle = '#0f172a';
+  ctx.lineWidth = 1.2;
   ctx.beginPath();
-  ctx.moveTo(-8, -24.5 + browTension * 0.5);
-  ctx.quadraticCurveTo(0, -27 - browTension, 8, -24.5 + browTension * 0.5);
+  ctx.roundRect(-8, -25.5 - browTension * 0.5, 16, 2.6, 1);
+  ctx.fill();
   ctx.stroke();
 
   // Bags Under Eyes (Insomnia / Exhaustion)
