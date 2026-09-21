@@ -1,5 +1,5 @@
 import { useGame } from '../context/GameContext';
-import { PLAYABLE_CHARACTERS } from '../data/gameConfig';
+import { PLAYABLE_CHARACTERS, PLAYER_CONFIG } from '../data/gameConfig';
 
 /**
  * GameHUD Component
@@ -34,10 +34,10 @@ export default function GameHUD({
   const isPaused = gameStatus === 'paused';
   const charConfig = PLAYABLE_CHARACTERS[activeCharacter] || PLAYABLE_CHARACTERS.rick;
 
-  // Heart representations
+  // Heart representations (1 vida por nivel)
   const renderHearts = () => {
     const hearts = [];
-    for (let i = 0; i < 3; i++) {
+    for (let i = 0; i < PLAYER_CONFIG.maxLives; i++) {
       hearts.push(
         <span
           key={`heart-${i}`}
@@ -105,9 +105,15 @@ export default function GameHUD({
           </div>
 
           {isPickleRick ? (
-            <div className="hud-pickle-badge" title="Hiper-velocidad y Ráfagas Láser de Batería">
-              <span className="pickle-flame">🔥</span>
-              <span className="pickle-text">¡PICKLE RICK! ({pickleSeconds}s)</span>
+            <div className="hud-pickle-badge-group">
+              <div className="hud-pickle-badge" title="[E] Rat Ground Slam Sísmico | Inmune a Ácido | Regeneración +25 HP">
+                <span className="pickle-flame">🥒</span>
+                <span className="pickle-text">¡PICKLE RICK! ({pickleSeconds}s)</span>
+              </div>
+              <div className="hud-pickle-skill-hint" title="Presiona E para activar Rat Slam Sísmico">
+                <span className="hud-key-tag">[E]</span>
+                <span className="hud-skill-name">RAT SLAM SÍSMICO</span>
+              </div>
             </div>
           ) : (
             <div className="hud-skill-badge" title={charConfig.skillDesc}>
@@ -151,8 +157,11 @@ export default function GameHUD({
         )}
 
         <div className="hud-stat-item hud-lives-row">
-          <span className="hud-label">VIDAS:</span>
+          <span className="hud-label">VIDA:</span>
           <div className="hud-hearts-container">{renderHearts()}</div>
+          <span className="hud-single-life-badge" title="Modo Supervivencia: 1 sola vida por nivel">
+            💀 1 VIDA / NIVEL
+          </span>
           <span className="hud-jump-badge" title="Doble salto disponible presionando dos veces saltar">
             🚀 2x SALTO
           </span>

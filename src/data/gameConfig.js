@@ -186,7 +186,7 @@ export const PLAYER_CONFIG = {
   width: 44,
   height: 64,
   maxHealth: 100,
-  maxLives: 3,
+  maxLives: 1, // 1 sola vida por nivel (Modo Arcade clásico)
   moveSpeed: 5.5,
   jumpForce: -12.5,
   gravity: 0.52,
@@ -290,7 +290,11 @@ export const POWERUP_CONFIG = {
     pickleTransformation: true,
     speedMultiplier: 1.45,
     damageMultiplier: 2.2,
-    score: 500
+    score: 500,
+    specialSkill: 'Rat Ground Slam & Sobrecarga Láser AA',
+    specialSkillDesc: 'Onda sísmica en área (120 DMG), salva de 5 láseres de plasma y regeneración',
+    acidImmunity: true,
+    cellularRegen: 25
   }
 };
 

@@ -96,14 +96,26 @@ export default function GameOverModal({
 
         {/* Action Buttons */}
         <div className="modal-actions-group">
+          {isVictory && level < 3 && (
+            <Link
+              to={`/nivel/${level + 1}`}
+              className="btn-portal-primary btn-next-level"
+              id="btn-next-level"
+              onClick={onRestart}
+            >
+              <span aria-hidden="true">🚀</span>
+              <span>SIGUIENTE NIVEL (0{level + 1})</span>
+            </Link>
+          )}
+
           <button
             type="button"
-            className="btn-portal-primary"
+            className={isVictory && level < 3 ? 'btn-portal-secondary' : 'btn-portal-primary'}
             onClick={onRestart}
             id="btn-play-again"
           >
             <span aria-hidden="true">↻</span>
-            <span>JUGAR DE NUEVO</span>
+            <span>{isVictory ? 'REPETIR NIVEL' : 'REINTENTAR NIVEL (1 VIDA)'}</span>
           </button>
 
           <Link to="/leaderboard" className="btn-portal-secondary" id="btn-view-leaderboard">

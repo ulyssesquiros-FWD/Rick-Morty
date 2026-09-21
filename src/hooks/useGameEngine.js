@@ -199,23 +199,112 @@ export function useGameEngine({
     }
 
     
-        if (p.pickleRickTimer > 0) {
-          soundManager.playLaser();
-          state.bullets.push({
-            x: startX,
-            y: startY,
-            vx: bulletSpeed * 1.35,
-            vy: (Math.random() - 0.5) * 0.25,
-            width: 28,
-            height: 8,
-            color: '#ef4444',
-            damage: Math.round(charConf.bulletDamage * 2.2),
-            isCritical: true,
-            isPickleLaser: true
+    if (p.pickleRickTimer > 0) {
+      // Pickle Rick: "RAT GROUND SLAM & AA-BATTERY OVERCHARGE"
+      soundManager.playPickleRoar();
+      soundManager.playCrateBreak();
+      soundManager.playLaser();
+      p.skillCooldown = 180; // 3s cooldown
+      p.invulnerableTimer = 45;
+      state.screenShake = 16;
+
+      const groundY = 432;
+
+      // Slam down immediately if in mid-air
+      if (!p.onGround) {
+        p.vy = 18;
+      }
+
+      const slamX = p.x + p.width / 2;
+      const slamY = p.y + p.height;
+
+      // Shockwaves traveling left and right
+      soundManager.playShockwave();
+      state.shockwaves.push({
+        x: slamX,
+        y: groundY - 10,
+        vx: 6.8,
+        width: 36,
+        height: 26,
+        life: 80,
+        maxLife: 80,
+        color: '#ef4444'
+      });
+      state.shockwaves.push({
+        x: slamX,
+        y: groundY - 10,
+        vx: -6.8,
+        width: 36,
+        height: 26,
+        life: 80,
+        maxLife: 80,
+        color: '#ef4444'
+      });
+
+      // Impact explosion particles
+      for (let i = 0; i < 30; i++) {
+        const angle = Math.random() * Math.PI * 2;
+        const spd = 2 + Math.random() * 6;
+        state.particles.push({
+          x: slamX,
+          y: slamY - 8,
+          vx: Math.cos(angle) * spd,
+          vy: Math.sin(angle) * spd,
+          life: 30 + Math.random() * 18,
+          maxLife: 45,
+          color: Math.random() < 0.5 ? '#ef4444' : '#42f56c',
+          size: 3 + Math.random() * 4
+        });
+      }
+
+      // Massive area damage to all enemies within 340px
+      state.enemies.forEach((en) => {
+        const dist = Math.abs(en.x - p.x);
+        if (dist < 340) {
+          en.health -= 120;
+          soundManager.playEnemyHit();
+          state.floatingTexts.push({
+            text: 'RAT SLAM! -120 🥒💥',
+            x: en.x,
+            y: en.y - 20,
+            vy: -1.4,
+            alpha: 1.0,
+            life: 45,
+            color: '#ef4444'
           });
-          createExplosion(startX, startY, '#ef4444', 8);
-          p.shootCooldown = 6;
-        } else if (p.character === 'rick') {
+        }
+      });
+
+      // 5-way fan spread of high-voltage battery laser beams
+      const facingDir = p.facing === 'right' ? 1 : -1;
+      const laserStartX = p.facing === 'right' ? p.x + p.width + 6 : p.x - 22;
+      const laserStartY = p.y + p.height / 2;
+      for (let s = -2; s <= 2; s++) {
+        state.bullets.push({
+          x: laserStartX,
+          y: laserStartY + s * 7,
+          vx: facingDir * 16,
+          vy: s * 2.2,
+          width: 32,
+          height: 10,
+          color: '#ef4444',
+          damage: 75,
+          isCritical: true,
+          isPickleLaser: true
+        });
+      }
+
+      state.floatingTexts.push({
+        text: "¡I'M PICKLE RICK! 🥒⚡",
+        x: p.x - 25,
+        y: p.y - 32,
+        vy: -1.2,
+        alpha: 1.0,
+        life: 55,
+        color: '#42f56c'
+      });
+      return;
+    } else if (p.character === 'rick') {
       // Rick: Portal Warp Dash (220px horizontal teleport with area distortion damage)
       soundManager.playSpecialSkill('rick');
       p.skillCooldown = charConf.skillCooldown;
@@ -532,7 +621,16 @@ export function useGameEngine({
       if (p.skillActiveTimer > 0) p.skillActiveTimer--;
       if (p.portalSwapTimer > 0) p.portalSwapTimer--;
       if (p.recoilTimer > 0) p.recoilTimer--;
-      if (p.pickleRickTimer > 0) p.pickleRickTimer--;
+      if (p.pickleRickTimer > 0) {
+        p.pickleRickTimer--;
+        // Pickle Rick cellular regeneration: restores 25 HP (+1 hit) every 2 seconds (120 frames)
+        if (p.pickleRickTimer > 0 && p.pickleRickTimer % 120 === 0 && onHealPlayer) {
+          onHealPlayer(25);
+          soundManager.playPowerup();
+          addFloatingText('🥒 +25 HP REGENERADO', p.x - 10, p.y - 25, '#42f56c');
+          createExplosion(p.x + p.width / 2, p.y + p.height / 2, '#42f56c', 10);
+        }
+      }
       if (state.screenShake > 0) state.screenShake--;
 
       p.blinkTimer++;
@@ -652,18 +750,27 @@ export function useGameEngine({
       // Toxic Acid Hazards on Ground
       state.acidHazards.forEach((ah) => {
         if (
-          p.invulnerableTimer === 0 &&
           p.x + p.width > ah.x &&
           p.x < ah.x + ah.width &&
           p.y + p.height >= GROUND_Y - 6
         ) {
-          p.invulnerableTimer = 50;
-          p.vy = -8.5;
-          soundManager.playPlayerHurt();
-          state.screenShake = 8;
-          onPlayerDamage(ah.damage || 25);
-          addFloatingText('¡ÁCIDO TÓXICO! -1 GOLPE', p.x - 20, p.y - 18, '#22c55e');
-          createExplosion(p.x + p.width / 2, GROUND_Y - 4, '#22c55e', 16);
+          if (isPickle) {
+            // Pickle Rick is immune to sewer toxic acid! Bounces effortlessly
+            if (p.vy >= 0) {
+              p.vy = -10.5;
+              soundManager.playSteamVent();
+              addFloatingText('🥒 ¡INMUNE AL ÁCIDO!', p.x - 10, p.y - 18, '#42f56c');
+              createExplosion(p.x + p.width / 2, GROUND_Y - 4, '#42f56c', 12);
+            }
+          } else if (p.invulnerableTimer === 0) {
+            p.invulnerableTimer = 50;
+            p.vy = -8.5;
+            soundManager.playPlayerHurt();
+            state.screenShake = 8;
+            onPlayerDamage(ah.damage || 25);
+            addFloatingText('¡ÁCIDO TÓXICO! -1 GOLPE', p.x - 20, p.y - 18, '#22c55e');
+            createExplosion(p.x + p.width / 2, GROUND_Y - 4, '#22c55e', 16);
+          }
         }
       });
 
@@ -802,7 +909,36 @@ export function useGameEngine({
         const startX = p.facing === 'right' ? p.x + p.width + 2 : p.x - 14;
         const startY = p.y + p.height / 2 - 2;
 
-        if (p.character === 'rick') {
+        if (isPickle) {
+          soundManager.playLaser();
+          // Twin high-voltage AA battery laser cannons
+          state.bullets.push({
+            x: startX,
+            y: startY - 4,
+            vx: bulletSpeed * 1.4,
+            vy: (Math.random() - 0.5) * 0.2,
+            width: 28,
+            height: 8,
+            color: '#ef4444',
+            damage: Math.round(charConf.bulletDamage * 2.2),
+            isCritical: true,
+            isPickleLaser: true
+          });
+          state.bullets.push({
+            x: startX,
+            y: startY + 4,
+            vx: bulletSpeed * 1.4,
+            vy: (Math.random() - 0.5) * 0.2,
+            width: 24,
+            height: 6,
+            color: '#42f56c',
+            damage: Math.round(charConf.bulletDamage * 1.6),
+            isCritical: true,
+            isPickleLaser: true
+          });
+          createExplosion(startX, startY, '#ef4444', 8);
+          p.shootCooldown = 6; // Ultra fast fire rate
+        } else if (p.character === 'rick') {
           soundManager.playLaser();
           const isCritical = Math.random() < 0.25;
           const damage = isCritical ? Math.round(charConf.bulletDamage * 2.5) : charConf.bulletDamage;

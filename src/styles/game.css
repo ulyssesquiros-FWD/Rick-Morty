@@ -853,3 +853,53 @@
   to { filter: brightness(1.3); }
 }
 
+/* 1-Life Mode HUD Badge */
+.hud-single-life-badge {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  font-weight: 800;
+  color: #f87171;
+  background: rgba(239, 68, 68, 0.15);
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  padding: 0.1rem 0.4rem;
+  border-radius: 4px;
+  animation: singleLifePulse 1.8s infinite ease-in-out;
+}
+
+@keyframes singleLifePulse {
+  0%, 100% { border-color: rgba(239, 68, 68, 0.4); box-shadow: none; }
+  50% { border-color: rgba(239, 68, 68, 0.9); box-shadow: 0 0 8px rgba(239, 68, 68, 0.5); }
+}
+
+/* Pickle Rick Special Skill HUD Elements */
+.hud-pickle-badge-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.hud-pickle-skill-hint {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  font-weight: 800;
+  color: #a3e635;
+  background: rgba(0, 0, 0, 0.5);
+  border: 1px dashed #65a30d;
+  padding: 0.08rem 0.35rem;
+  border-radius: 3px;
+}
+
+.btn-next-level {
+  background: linear-gradient(135deg, #10b981, #06b6d4) !important;
+  box-shadow: 0 0 16px rgba(16, 185, 129, 0.5) !important;
+}
+
+.btn-next-level:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 0 24px rgba(16, 185, 129, 0.8) !important;
+}
+
+
