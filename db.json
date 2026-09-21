@@ -1,0 +1,74 @@
+{
+  "scores": [
+    {
+      "id": 1,
+      "player": "RickPrime_C137",
+      "score": 3850,
+      "level": 3,
+      "enemiesDefeated": 34,
+      "livesRemaining": 3,
+      "duration": 182,
+      "classification": "DIMENSION MASTER",
+      "createdAt": "2026-09-20T18:45:00.000Z"
+    },
+    {
+      "id": 2,
+      "player": "EvilMorty_EyePatch",
+      "score": 2900,
+      "level": 3,
+      "enemiesDefeated": 28,
+      "livesRemaining": 2,
+      "duration": 165,
+      "classification": "DIMENSION MASTER",
+      "createdAt": "2026-09-21T08:30:00.000Z"
+    },
+    {
+      "id": 3,
+      "player": "BirdPerson_Wingman",
+      "score": 1750,
+      "level": 2,
+      "enemiesDefeated": 18,
+      "livesRemaining": 1,
+      "duration": 130,
+      "classification": "DIMENSION MASTER",
+      "createdAt": "2026-09-21T09:15:00.000Z"
+    },
+    {
+      "id": 4,
+      "player": "Summer_Apocalypse",
+      "score": 1100,
+      "level": 1,
+      "enemiesDefeated": 12,
+      "livesRemaining": 2,
+      "duration": 95,
+      "classification": "DIMENSION MASTER",
+      "createdAt": "2026-09-21T09:40:00.000Z"
+    },
+    {
+      "id": 5,
+      "player": "Jerry_Smith_Apprentice",
+      "score": 450,
+      "level": 1,
+      "enemiesDefeated": 4,
+      "livesRemaining": 0,
+      "duration": 48,
+      "classification": "PORTAL ROOKIE",
+      "createdAt": "2026-09-21T10:00:00.000Z"
+    }
+  ],
+  "players": [
+    {
+      "id": 1,
+      "name": "RickPrime_C137",
+      "highScore": 3850,
+      "gamesPlayed": 12
+    },
+    {
+      "id": 2,
+      "name": "EvilMorty_EyePatch",
+      "highScore": 2900,
+      "gamesPlayed": 8
+    }
+  ],
+  "gameSessions": []
+}

@@ -1,0 +1,178 @@
+{
+  "name": "Rick & Morty: Dimension Raid - Score Classification Workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "dimension-raid-score",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "1",
+      "name": "Webhook Incursión",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        250,
+        300
+      ],
+      "webhookId": "dimension-raid-score"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Normalizar y validar el payload de la partida\nconst body = $input.first().json.body || $input.first().json;\n\nconst player = String(body.player || 'Rick Sanchez').trim();\nconst score = Number(body.score) || 0;\nconst level = Number(body.level) || 1;\nconst enemiesDefeated = Number(body.enemiesDefeated) || 0;\nconst livesRemaining = Number(body.livesRemaining) || 0;\nconst duration = Number(body.duration) || 0;\nconst timestamp = body.timestamp || new Date().toISOString();\n\nreturn [{\n  json: {\n    player,\n    score,\n    level,\n    enemiesDefeated,\n    livesRemaining,\n    duration,\n    timestamp,\n    isValid: score >= 0 && player.length > 0\n  }\n}];"
+      },
+      "id": "2",
+      "name": "Validar y Normalizar",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        480,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "number": [
+            {
+              "value1": "={{ $json.score }}",
+              "operation": "largerEqual",
+              "value2": 1000
+            }
+          ]
+        }
+      },
+      "id": "3",
+      "name": "IF Score >= 1000",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        700,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const item = $input.first().json;\nreturn [{\n  json: {\n    ...item,\n    classification: 'DIMENSION MASTER',\n    tier: 'S-Rank',\n    badge: '🏆 Maestro Multiversal',\n    reward: 'Skins de Portal Gun Dorada',\n    message: `¡Increíble desempeño, ${item.player}! Has demostrado maestría interdimensional con ${item.score} puntos.`\n  }\n}];"
+      },
+      "id": "4",
+      "name": "Clasificar Master",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        940,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const item = $input.first().json;\nreturn [{\n  json: {\n    ...item,\n    classification: 'PORTAL ROOKIE',\n    tier: 'B-Rank',\n    badge: '⚡ Recluta de la Ciudadela',\n    reward: 'Batería de Portal Estándar',\n    message: `Puntuación registrada (${item.score} pts). Sigue practicando en la Ciudadela para ascender de rango.`\n  }\n}];"
+      },
+      "id": "5",
+      "name": "Clasificar Rookie",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        940,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ success: true, player: $json.player, score: $json.score, level: $json.level, classification: $json.classification, tier: $json.tier, badge: $json.badge, reward: $json.reward, message: $json.message, timestamp: $json.timestamp }) }}",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "name": "Access-Control-Allow-Origin",
+                "value": "*"
+              }
+            ]
+          }
+        }
+      },
+      "id": "6",
+      "name": "Respond to Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        1200,
+        300
+      ]
+    }
+  ],
+  "connections": {
+    "Webhook Incursión": {
+      "main": [
+        [
+          {
+            "node": "Validar y Normalizar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validar y Normalizar": {
+      "main": [
+        [
+          {
+            "node": "IF Score >= 1000",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF Score >= 1000": {
+      "main": [
+        [
+          {
+            "node": "Clasificar Master",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Clasificar Rookie",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Clasificar Master": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Clasificar Rookie": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  }
+}
