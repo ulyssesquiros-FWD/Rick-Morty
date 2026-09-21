@@ -1,6 +1,7 @@
 /**
  * GameControls Component
- * Provides both visual desktop key guide and on-screen touch controls for mobile/tablet devices.
+ * Desktop Keyboard Guide and Mobile/Tablet Touch Controls
+ * Supports Character Swap (Q) and Special Skill (E).
  */
 export default function GameControls({ onTriggerAction }) {
   const handleTouchStart = (action) => (e) => {
@@ -17,10 +18,24 @@ export default function GameControls({ onTriggerAction }) {
     <div className="game-controls-container" aria-label="Game Controls">
       {/* Desktop Key Helper */}
       <div className="desktop-controls-hint">
-        <span className="control-badge"><kbd>A</kbd> / <kbd>D</kbd> or <kbd>←</kbd><kbd>→</kbd> MOVER</span>
-        <span className="control-badge"><kbd>W</kbd> / <kbd>↑</kbd> SALTAR</span>
-        <span className="control-badge"><kbd>SPACE</kbd> / <kbd>J</kbd> DISPARAR</span>
-        <span className="control-badge"><kbd>ESC</kbd> PAUSAR</span>
+        <span className="control-badge">
+          <kbd>A</kbd> / <kbd>D</kbd> or <kbd>←</kbd><kbd>→</kbd> MOVER
+        </span>
+        <span className="control-badge">
+          <kbd>W</kbd> / <kbd>↑</kbd> SALTAR (Doble salto con Morty)
+        </span>
+        <span className="control-badge">
+          <kbd>SPACE</kbd> / <kbd>J</kbd> DISPARAR
+        </span>
+        <span className="control-badge control-badge-highlight">
+          <kbd>Q</kbd> CAMBIAR RICK / MORTY
+        </span>
+        <span className="control-badge control-badge-special">
+          <kbd>E</kbd> HABILIDAD ESPECIAL
+        </span>
+        <span className="control-badge">
+          <kbd>ESC</kbd> PAUSAR
+        </span>
       </div>
 
       {/* Touch Screen Arcade D-Pad and Action Buttons for Mobile */}
@@ -48,6 +63,30 @@ export default function GameControls({ onTriggerAction }) {
           </button>
         </div>
 
+        {/* Center: Character Swap & Skill Buttons */}
+        <div className="touch-utility-actions">
+          <button
+            type="button"
+            className="btn-touch btn-touch-swap"
+            onPointerDown={handleTouchStart('swap')}
+            onPointerUp={handleTouchEnd('swap')}
+            aria-label="Intercambiar personaje Rick / Morty"
+            title="Cambiar Personaje"
+          >
+            🌀 Q
+          </button>
+          <button
+            type="button"
+            className="btn-touch btn-touch-skill"
+            onPointerDown={handleTouchStart('skill')}
+            onPointerUp={handleTouchEnd('skill')}
+            aria-label="Habilidad Especial"
+            title="Habilidad Especial"
+          >
+            💥 E
+          </button>
+        </div>
+
         <div className="touch-actions">
           <button
             type="button"
@@ -65,7 +104,7 @@ export default function GameControls({ onTriggerAction }) {
             onPointerDown={handleTouchStart('shoot')}
             onPointerUp={handleTouchEnd('shoot')}
             onPointerLeave={handleTouchEnd('shoot')}
-            aria-label="Disparar arma de portal"
+            aria-label="Disparar"
           >
             ⚡
           </button>

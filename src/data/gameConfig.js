@@ -99,6 +99,90 @@ export const PLAYER_CONFIG = {
   fireCooldown: 12 // frames between shots
 };
 
+export const PLAYABLE_CHARACTERS = {
+  rick: {
+    id: 'rick',
+    name: 'Rick Sanchez',
+    title: 'Científico C-137',
+    color: '#42f56c',
+    glowColor: 'rgba(66, 245, 108, 0.4)',
+    accentColor: '#38bdf8',
+    width: 44,
+    height: 64,
+    moveSpeed: 5.5,
+    jumpForce: -12.5,
+    bulletSpeed: 13,
+    bulletDamage: 38,
+    fireCooldown: 12,
+    bulletType: 'laser',
+    bulletColor: '#42f56c',
+    passiveName: 'Genio Multiversal',
+    passiveDesc: '+25% Daño Crítico (Probabilidad de desintegración inmediata)',
+    skillKey: 'E',
+    skillName: 'Salto Cuántico',
+    skillDesc: 'Warp de portal 200px al frente con daño de distorsión',
+    skillCooldown: 300, // 5 segundos a 60fps
+    skillDuration: 20
+  },
+  morty: {
+    id: 'morty',
+    name: 'Morty Smith',
+    title: 'Escudero Ansioso',
+    color: '#facc15',
+    glowColor: 'rgba(250, 204, 21, 0.4)',
+    accentColor: '#c084fc',
+    width: 38,
+    height: 56,
+    moveSpeed: 6.2,
+    jumpForce: -11.8,
+    bulletSpeed: 11,
+    bulletDamage: 22,
+    fireCooldown: 13,
+    bulletType: 'dual',
+    bulletColor: '#facc15',
+    passiveName: 'Doble Salto & Agilidad',
+    passiveDesc: 'Permite un segundo impulso en el aire y mayor velocidad base',
+    skillKey: 'E',
+    skillName: 'Cristal de la Muerte',
+    skillDesc: 'Precognición: Invulnerabilidad total y sobrecarga cuádruple por 3.5s',
+    skillCooldown: 420, // 7 segundos a 60fps
+    skillDuration: 210 // 3.5s duración activa
+  }
+};
+
+export const POWERUP_CONFIG = {
+  FLASK: {
+    id: 'flask',
+    name: "Rick's Flask",
+    label: '+30 HP',
+    color: '#38bdf8',
+    icon: '🧪',
+    duration: 0,
+    heal: 30,
+    score: 150
+  },
+  MEGA_SEED: {
+    id: 'mega_seed',
+    name: 'Mega Seed',
+    label: 'SKILL READY',
+    color: '#a855f7',
+    icon: '🧬',
+    duration: 0,
+    resetSkill: true,
+    score: 300
+  },
+  PORTAL_FLUID: {
+    id: 'portal_fluid',
+    name: 'Portal Fluid',
+    label: 'HYPER SHIELD',
+    color: '#42f56c',
+    icon: '🌀',
+    duration: 360, // 6 segundos
+    invulnerable: true,
+    score: 200
+  }
+};
+
 export const SCORE_SYSTEM = {
   REGULAR_ENEMY: 100,
   FLYING_ENEMY: 175,
@@ -106,5 +190,6 @@ export const SCORE_SYSTEM = {
   BOSS_ENEMY: 600,
   LEVEL_COMPLETION: 1000,
   TIME_BONUS_MULTIPLIER: 10,
-  LIFE_BONUS: 200
+  LIFE_BONUS: 200,
+  POWERUP: 150
 };

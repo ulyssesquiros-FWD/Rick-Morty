@@ -14,7 +14,11 @@ export default function GameBoard({
   onPlayerDeath,
   onVictory,
   onPauseToggle,
-  controlsRef
+  controlsRef,
+  activeCharacter,
+  onCharacterSwap,
+  onHealPlayer,
+  onScoreBonus
 }) {
   const canvasRef = useRef(null);
 
@@ -27,7 +31,11 @@ export default function GameBoard({
     onPlayerDamage,
     onPlayerDeath,
     onVictory,
-    onPauseToggle
+    onPauseToggle,
+    activeCharacter,
+    onCharacterSwap,
+    onHealPlayer,
+    onScoreBonus
   });
 
   // Safely assign engine to ref without re-render loop

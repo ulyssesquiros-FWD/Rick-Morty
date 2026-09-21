@@ -35,6 +35,132 @@
   gap: 1rem;
 }
 
+/* Character Card in HUD */
+.hud-character-card {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background: rgba(15, 23, 42, 0.75);
+  border: 1px solid rgba(66, 245, 108, 0.25);
+  padding: 0.35rem 0.65rem;
+  border-radius: var(--radius-md);
+}
+
+.hud-char-avatar-ring {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 2px solid var(--portal-green);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.5);
+  transition: all 0.25s ease;
+}
+
+.hud-char-icon {
+  font-size: 1.15rem;
+}
+
+.hud-char-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.hud-char-name-row {
+  display: flex;
+  align-items: baseline;
+  gap: 0.4rem;
+}
+
+.hud-char-name-row strong {
+  font-family: var(--font-display);
+  font-size: 0.85rem;
+}
+
+.hud-char-title {
+  font-size: 0.65rem;
+  color: var(--text-secondary);
+  font-family: var(--font-mono);
+}
+
+.hud-skill-badge {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  background: rgba(124, 58, 237, 0.25);
+  border: 1px solid rgba(168, 85, 247, 0.4);
+  padding: 0.1rem 0.4rem;
+  border-radius: 4px;
+}
+
+.hud-key-tag {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  font-weight: 800;
+  color: #c084fc;
+}
+
+.hud-skill-name {
+  font-size: 0.68rem;
+  color: #f8fafc;
+  font-weight: 600;
+}
+
+.btn-hud-swap {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: linear-gradient(135deg, rgba(66, 245, 108, 0.2), rgba(34, 211, 238, 0.2));
+  border: 1px solid var(--portal-green);
+  color: #fff;
+  padding: 0.35rem 0.65rem;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-hud-swap:hover {
+  background: var(--portal-green);
+  color: #050816;
+  box-shadow: 0 0 12px var(--portal-green);
+  transform: translateY(-1px);
+}
+
+.swap-key-hint {
+  background: rgba(0, 0, 0, 0.4);
+  padding: 0.1rem 0.35rem;
+  border-radius: 3px;
+  color: var(--portal-green-bright);
+}
+
+.btn-hud-swap:hover .swap-key-hint {
+  color: #050816;
+}
+
+.btn-hud-sound {
+  background: rgba(17, 24, 39, 0.8);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  font-size: 1.1rem;
+  padding: 0.35rem 0.6rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-hud-sound:hover {
+  border-color: var(--cyan);
+  box-shadow: 0 0 8px rgba(34, 211, 238, 0.4);
+}
+
+.hud-lives-row {
+  margin-top: 0.25rem;
+}
+
 .hud-label {
   font-family: var(--font-mono);
   font-size: 0.7rem;
@@ -279,6 +405,26 @@
   color: var(--portal-green-bright);
 }
 
+.control-badge-highlight {
+  border-color: rgba(66, 245, 108, 0.5);
+  background: rgba(66, 245, 108, 0.12);
+}
+
+.control-badge-highlight kbd {
+  color: #39ff14;
+  background: rgba(66, 245, 108, 0.25);
+}
+
+.control-badge-special {
+  border-color: rgba(168, 85, 247, 0.5);
+  background: rgba(168, 85, 247, 0.15);
+}
+
+.control-badge-special kbd {
+  color: #c084fc;
+  background: rgba(168, 85, 247, 0.25);
+}
+
 .mobile-touch-controls {
   display: none;
   justify-content: space-between;
@@ -287,7 +433,7 @@
   padding: 0 1rem;
 }
 
-.touch-dpad, .touch-actions {
+.touch-dpad, .touch-utility-actions, .touch-actions {
   display: flex;
   gap: 0.75rem;
 }
@@ -314,6 +460,30 @@
   color: #050816;
   transform: scale(0.95);
   box-shadow: var(--glow-green);
+}
+
+.btn-touch-swap {
+  border-color: #38bdf8;
+  color: #38bdf8;
+  font-size: 1.1rem;
+}
+
+.btn-touch-swap:active {
+  background: #38bdf8;
+  color: #050816;
+  box-shadow: 0 0 15px #38bdf8;
+}
+
+.btn-touch-skill {
+  border-color: #c084fc;
+  color: #c084fc;
+  font-size: 1.1rem;
+}
+
+.btn-touch-skill:active {
+  background: #c084fc;
+  color: #050816;
+  box-shadow: 0 0 15px #c084fc;
 }
 
 .btn-touch-shoot {

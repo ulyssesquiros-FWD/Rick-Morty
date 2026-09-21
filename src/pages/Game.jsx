@@ -39,8 +39,12 @@ export default function Game() {
     resetGame,
     recordEnemyDefeat,
     damagePlayer,
+    healPlayer,
+    addScore,
     loseLife,
-    finishGame
+    finishGame,
+    activeCharacter,
+    switchCharacter
   } = useGame();
 
   const {
@@ -203,6 +207,8 @@ export default function Game() {
         formattedTime={formattedTime}
         targetEnemies={levelConfig.targetEnemies}
         onPauseToggle={handlePauseToggle}
+        activeCharacter={activeCharacter}
+        onCharacterSwap={switchCharacter}
       />
 
       {/* Main 2D Canvas Area */}
@@ -216,6 +222,10 @@ export default function Game() {
         onVictory={handleVictory}
         onPauseToggle={handlePauseToggle}
         controlsRef={controlsRef}
+        activeCharacter={activeCharacter}
+        onCharacterSwap={switchCharacter}
+        onHealPlayer={healPlayer}
+        onScoreBonus={addScore}
       />
 
       {/* Controls Overlay & Mobile Touch D-Pad */}

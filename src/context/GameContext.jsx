@@ -2,6 +2,7 @@ import { createContext, useContext, useState, useCallback, useMemo } from 'react
 import { PLAYER_CONFIG } from '../data/gameConfig';
 import { saveScore } from '../services/scoreService';
 import { sendScoreToN8n } from '../services/n8nService';
+import { soundManager } from '../services/soundService';
 
 const GameContext = createContext(null);
 
@@ -17,6 +18,24 @@ export function GameProvider({ children }) {
   const [enemiesDefeated, setEnemiesDefeated] = useState(0);
   const [gameStatus, setGameStatus] = useState('idle'); // 'idle' | 'playing' | 'paused' | 'game_over' | 'victory'
   const [sessionResult, setSessionResult] = useState(null);
+  const [activeCharacter, setActiveCharacter] = useState('rick'); // 'rick' | 'morty'
+  const [soundMuted, setSoundMuted] = useState(false);
+
+  const toggleSound = useCallback(() => {
+    setSoundMuted((prev) => {
+      const next = !prev;
+      soundManager.setMuted(next);
+      return next;
+    });
+  }, []);
+
+  const switchCharacter = useCallback(() => {
+    setActiveCharacter((prev) => {
+      const next = prev === 'rick' ? 'morty' : 'rick';
+      soundManager.playPortalSwap();
+      return next;
+    });
+  }, []);
 
   const setPlayerName = useCallback((name) => {
     const trimmed = name?.trim() || 'Rick Sanchez';
@@ -148,7 +167,12 @@ export function GameProvider({ children }) {
       damagePlayer,
       healPlayer,
       loseLife,
-      finishGame
+      finishGame,
+      activeCharacter,
+      setActiveCharacter,
+      switchCharacter,
+      soundMuted,
+      toggleSound
     }),
     [
       playerName,
@@ -169,7 +193,11 @@ export function GameProvider({ children }) {
       damagePlayer,
       healPlayer,
       loseLife,
-      finishGame
+      finishGame,
+      activeCharacter,
+      switchCharacter,
+      soundMuted,
+      toggleSound
     ]
   );
 
