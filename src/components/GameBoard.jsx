@@ -18,7 +18,8 @@ export default function GameBoard({
   activeCharacter,
   onCharacterSwap,
   onHealPlayer,
-  onScoreBonus
+  onScoreBonus,
+  onProgressUpdate
 }) {
   const canvasRef = useRef(null);
 
@@ -35,7 +36,8 @@ export default function GameBoard({
     activeCharacter,
     onCharacterSwap,
     onHealPlayer,
-    onScoreBonus
+    onScoreBonus,
+    onProgressUpdate
   });
 
   // Safely assign engine to ref without re-render loop

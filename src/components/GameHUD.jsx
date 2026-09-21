@@ -4,17 +4,20 @@ import { PLAYABLE_CHARACTERS } from '../data/gameConfig';
 /**
  * GameHUD Component
  * Displays real-time arcade HUD metrics:
- * Active Character (Rick/Morty swap), Special Skill badge,
- * Score, Lives, Level, Health, Enemies, Timer, Audio toggle, and Pause.
+ * - Active Character (Rick/Morty swap with Starburns avatars)
+ * - Contra-style Level Progress Bar (0m ➔ 2450m Boss Sector)
+ * - Double Jump status indicator (Quantum rockets / Gravity boots)
+ * - Score, Lives, Level, Health, Enemies, Timer, Audio toggle, and Pause.
  */
 export default function GameHUD({
   levelNumber = 1,
   levelName = 'Earth C-137',
   formattedTime = '00:00',
-  targetEnemies = 10,
+  targetEnemies = 12,
   onPauseToggle,
   activeCharacter = 'rick',
-  onCharacterSwap
+  onCharacterSwap,
+  levelProgress = { playerX: 100, worldWidth: 3200, bossArenaX: 2450, progressPercent: 0, inBossArena: false }
 }) {
   const {
     playerName,
@@ -109,10 +112,37 @@ export default function GameHUD({
         <div className="hud-stat-item hud-lives-row">
           <span className="hud-label">VIDAS:</span>
           <div className="hud-hearts-container">{renderHearts()}</div>
+          <span className="hud-jump-badge" title="Doble salto disponible presionando dos veces saltar">
+            🚀 2x SALTO
+          </span>
         </div>
       </div>
 
-      {/* 3. Level & Enemies Defeated */}
+      {/* 3. Contra Stage Progress (0m ➔ 2450m Boss Sector) */}
+      <div className="hud-block hud-map-progress-block">
+        <div className="hud-map-header">
+          <span className="hud-label">MAPA CONSECUTIVO:</span>
+          <span className={`hud-boss-alert ${levelProgress.inBossArena ? 'in-boss' : ''}`}>
+            {levelProgress.inBossArena ? '⚠️ ARENA DE JEFE' : `${levelProgress.progressPercent}%`}
+          </span>
+        </div>
+        <div className="hud-map-track" title={`Posición: ${levelProgress.playerX}m de ${levelProgress.bossArenaX}m`}>
+          <div
+            className="hud-map-fill"
+            style={{ width: `${Math.min(100, levelProgress.progressPercent)}%` }}
+          />
+          <div className="hud-map-marker" style={{ left: `${Math.min(95, levelProgress.progressPercent)}%` }}>
+            {activeCharacter === 'rick' ? '🧪' : '⚡'}
+          </div>
+          <div className="hud-map-boss-flag">👾</div>
+        </div>
+        <div className="hud-map-footer">
+          <span className="hud-sub">{levelProgress.playerX}m</span>
+          <span className="hud-sub">ZONA JEFE {levelProgress.bossArenaX}m</span>
+        </div>
+      </div>
+
+      {/* 4. Level & Enemies */}
       <div className="hud-block hud-stats-block">
         <div className="hud-stat-item">
           <span className="hud-label">NIVEL:</span>
@@ -128,7 +158,7 @@ export default function GameHUD({
         </div>
       </div>
 
-      {/* 4. Score */}
+      {/* 5. Score */}
       <div className="hud-block hud-score-block">
         <div className="hud-stat-item">
           <span className="hud-label">SCORE:</span>
@@ -136,7 +166,7 @@ export default function GameHUD({
         </div>
       </div>
 
-      {/* 5. Right: Time, Sound Mute & Pause */}
+      {/* 6. Right: Time, Sound Mute & Pause */}
       <div className="hud-block hud-controls-block">
         <div className="hud-timer-box" title="Tiempo transcurrido">
           <span className="hud-label">TIEMPO:</span>

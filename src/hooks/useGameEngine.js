@@ -9,9 +9,13 @@ import { soundManager } from '../services/soundService';
 
 /**
  * Custom Hook: useGameEngine
- * Complete 2D Arcade Engine with Rick & Morty Character Swapping,
- * Full animated character bodies & limbs, unique canonical abilities,
- * Double Jump, Power-Up drops, Screen Shake, and Web Audio retro sounds.
+ * Contra (1987) Horizontal Side-Scrolling Engine:
+ * - Dynamic tracking camera across 3200px+ sprawling stages
+ * - Rich parallax backgrounds with Rick and Morty canonical lore
+ *   (Smith Garage, Space Cruiser, Cromulon "SHOW ME WHAT YOU GOT", Citadel billboards)
+ * - 2D character models with animations rigged directly from Starburns Industries Model Sheets
+ * - Double jump for BOTH Rick (quantum portal thrusters) and Morty (gravity boots)
+ * - Powerup drops, enemy limb animations, and climactic Boss Arena lock
  */
 export function useGameEngine({
   canvasRef,
@@ -26,7 +30,8 @@ export function useGameEngine({
   activeCharacter = 'rick',
   onCharacterSwap,
   onHealPlayer,
-  onScoreBonus
+  onScoreBonus,
+  onProgressUpdate
 }) {
   const keysRef = useRef({
     left: false,
@@ -40,7 +45,7 @@ export function useGameEngine({
 
   const gameStateRef = useRef({
     player: {
-      x: 80,
+      x: 100,
       y: 350,
       vx: 0,
       vy: 0,
@@ -58,6 +63,7 @@ export function useGameEngine({
       skillActiveTimer: 0,
       portalSwapTimer: 0
     },
+    cameraX: 0,
     bullets: [],
     enemyBullets: [],
     enemies: [],
@@ -77,7 +83,7 @@ export function useGameEngine({
   const imageCacheRef = useRef({});
   const animationFrameIdRef = useRef(null);
 
-  // Sync external activeCharacter change
+  // Sync external activeCharacter changes
   useEffect(() => {
     if (gameStateRef.current.player.character !== activeCharacter) {
       const p = gameStateRef.current.player;
@@ -89,7 +95,7 @@ export function useGameEngine({
     }
   }, [activeCharacter]);
 
-  // Preload images into cache
+  // Preload character images
   useEffect(() => {
     if (!characterAssets) return;
 
@@ -128,18 +134,18 @@ export function useGameEngine({
     p.height = charConf.height;
 
     // Portal vortex particles
-    for (let i = 0; i < 20; i++) {
-      const angle = (Math.PI * 2 * i) / 20;
-      const speed = 2 + Math.random() * 3;
+    for (let i = 0; i < 22; i++) {
+      const angle = (Math.PI * 2 * i) / 22;
+      const speed = 2.5 + Math.random() * 3.5;
       gameStateRef.current.particles.push({
         x: p.x + p.width / 2,
         y: p.y + p.height / 2,
         vx: Math.cos(angle) * speed,
         vy: Math.sin(angle) * speed,
-        life: 25,
-        maxLife: 25,
+        life: 26,
+        maxLife: 26,
         color: nextChar === 'rick' ? '#42f56c' : '#facc15',
-        size: 3 + Math.random() * 2
+        size: 3.5 + Math.random() * 2
       });
     }
 
@@ -170,21 +176,21 @@ export function useGameEngine({
       // Rick: Salto Cuántico (Portal Warp Dash)
       soundManager.playSpecialSkill('rick');
       p.skillCooldown = charConf.skillCooldown;
-      state.screenShake = 9;
+      state.screenShake = 10;
 
       const originX = p.x;
-      const warpDist = p.facing === 'right' ? 200 : -200;
-      const targetX = Math.max(10, Math.min(850 - p.width, p.x + warpDist));
+      const warpDist = p.facing === 'right' ? 220 : -220;
+      const targetX = Math.max(10, Math.min((levelConfig?.worldWidth || 3200) - p.width - 20, p.x + warpDist));
 
       // Particles at origin
-      for (let i = 0; i < 16; i++) {
+      for (let i = 0; i < 18; i++) {
         state.particles.push({
           x: originX + p.width / 2,
           y: p.y + p.height / 2,
-          vx: (Math.random() - 0.5) * 6,
-          vy: (Math.random() - 0.5) * 6,
-          life: 24,
-          maxLife: 24,
+          vx: (Math.random() - 0.5) * 7,
+          vy: (Math.random() - 0.5) * 7,
+          life: 25,
+          maxLife: 25,
           color: '#39ff14',
           size: 4
         });
@@ -207,10 +213,10 @@ export function useGameEngine({
       // Damage intersected enemies
       state.enemies.forEach((en) => {
         if (en.x + en.width >= minX && en.x <= maxX) {
-          en.health -= 70;
+          en.health -= 75;
           soundManager.playEnemyHit();
           state.floatingTexts.push({
-            text: 'WARP HIT! -70',
+            text: 'WARP HIT! -75',
             x: en.x,
             y: en.y - 12,
             vy: -1.2,
@@ -222,7 +228,7 @@ export function useGameEngine({
       });
 
       // Particles at destination
-      for (let i = 0; i < 20; i++) {
+      for (let i = 0; i < 22; i++) {
         state.particles.push({
           x: p.x + p.width / 2,
           y: p.y + p.height / 2,
@@ -231,7 +237,7 @@ export function useGameEngine({
           life: 28,
           maxLife: 28,
           color: '#22d3ee',
-          size: 4
+          size: 4.5
         });
       }
 
@@ -248,9 +254,9 @@ export function useGameEngine({
       // Morty: Death Crystal Matrix
       soundManager.playSpecialSkill('morty');
       p.skillCooldown = charConf.skillCooldown;
-      p.skillActiveTimer = charConf.skillDuration; // 210 frames = 3.5s
+      p.skillActiveTimer = charConf.skillDuration; // 3.5s
       p.invulnerableTimer = charConf.skillDuration;
-      state.screenShake = 6;
+      state.screenShake = 7;
 
       for (let i = 0; i < 24; i++) {
         state.particles.push({
@@ -261,7 +267,7 @@ export function useGameEngine({
           life: 30,
           maxLife: 30,
           color: '#c084fc',
-          size: 4
+          size: 4.5
         });
       }
 
@@ -273,6 +279,52 @@ export function useGameEngine({
         alpha: 1.0,
         life: 60,
         color: '#c084fc'
+      });
+    }
+  }, [levelConfig?.worldWidth]);
+
+  // Jump Action Handler with DOUBLE JUMP for BOTH Rick and Morty
+  const handleJumpPress = useCallback(() => {
+    const p = gameStateRef.current.player;
+    const charConf = PLAYABLE_CHARACTERS[p.character] || PLAYABLE_CHARACTERS.rick;
+
+    if (p.onGround) {
+      // First Jump (from ground or platform)
+      p.vy = charConf.jumpForce;
+      p.onGround = false;
+      p.jumpCount = 1;
+      soundManager.playJump(false);
+    } else if (p.jumpCount === 1) {
+      // DOUBLE JUMP in mid-air (BOTH Rick & Morty!)
+      p.vy = charConf.jumpForce * 0.94;
+      p.jumpCount = 2;
+      soundManager.playJump(true);
+
+      const isRick = p.character === 'rick';
+      const sparkColor = isRick ? '#39ff14' : '#facc15';
+
+      // Spawn rocket boot propulsion particles
+      for (let i = 0; i < 12; i++) {
+        gameStateRef.current.particles.push({
+          x: p.x + p.width / 2 + (Math.random() - 0.5) * 18,
+          y: p.y + p.height,
+          vx: (Math.random() - 0.5) * 4,
+          vy: 3 + Math.random() * 4,
+          life: 20,
+          maxLife: 20,
+          color: sparkColor,
+          size: 3.5
+        });
+      }
+
+      gameStateRef.current.floatingTexts.push({
+        text: isRick ? '🚀 QUANTUM THRUSTER!' : '⚡ GRAVITY BOOTS!',
+        x: p.x - 20,
+        y: p.y - 15,
+        vy: -1.2,
+        alpha: 1.0,
+        life: 40,
+        color: sparkColor
       });
     }
   }, []);
@@ -289,46 +341,17 @@ export function useGameEngine({
       if (e.code === 'KeyW' || e.code === 'ArrowUp') {
         if (!keysRef.current.up) {
           keysRef.current.up = true;
-          // Jump event trigger
-          const p = gameStateRef.current.player;
-          if (p.onGround) {
-            const charConf = PLAYABLE_CHARACTERS[p.character] || PLAYABLE_CHARACTERS.rick;
-            p.vy = charConf.jumpForce;
-            p.onGround = false;
-            p.jumpCount = 1;
-            soundManager.playJump(false);
-          } else if (p.character === 'morty' && p.jumpCount === 1) {
-            // Morty Double Jump!
-            const charConf = PLAYABLE_CHARACTERS.morty;
-            p.vy = charConf.jumpForce * 0.92;
-            p.jumpCount = 2;
-            soundManager.playJump(true);
-            // Spawn propulsion particles
-            for (let i = 0; i < 8; i++) {
-              gameStateRef.current.particles.push({
-                x: p.x + p.width / 2 + (Math.random() - 0.5) * 16,
-                y: p.y + p.height,
-                vx: (Math.random() - 0.5) * 3,
-                vy: 2 + Math.random() * 3,
-                life: 18,
-                maxLife: 18,
-                color: '#facc15',
-                size: 3
-              });
-            }
-          }
+          handleJumpPress();
         }
       }
       if (e.code === 'KeyS' || e.code === 'ArrowDown') keysRef.current.down = true;
       if (e.code === 'Space' || e.code === 'KeyJ') keysRef.current.shoot = true;
 
-      // Character Swap: Q key
       if (e.code === 'KeyQ') {
         e.preventDefault();
         triggerCharacterSwap();
       }
 
-      // Special Ability: E key
       if (e.code === 'KeyE') {
         e.preventDefault();
         triggerSpecialSkill();
@@ -354,7 +377,7 @@ export function useGameEngine({
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('keyup', handleKeyUp);
     };
-  }, [onPauseToggle, triggerCharacterSwap, triggerSpecialSkill]);
+  }, [onPauseToggle, triggerCharacterSwap, triggerSpecialSkill, handleJumpPress]);
 
   // Virtual control triggers
   const triggerAction = useCallback(
@@ -371,22 +394,10 @@ export function useGameEngine({
         keysRef.current[action] = isPressed;
       }
       if (action === 'up' && isPressed) {
-        const p = gameStateRef.current.player;
-        if (p.onGround) {
-          const charConf = PLAYABLE_CHARACTERS[p.character] || PLAYABLE_CHARACTERS.rick;
-          p.vy = charConf.jumpForce;
-          p.onGround = false;
-          p.jumpCount = 1;
-          soundManager.playJump(false);
-        } else if (p.character === 'morty' && p.jumpCount === 1) {
-          const charConf = PLAYABLE_CHARACTERS.morty;
-          p.vy = charConf.jumpForce * 0.92;
-          p.jumpCount = 2;
-          soundManager.playJump(true);
-        }
+        handleJumpPress();
       }
     },
-    [triggerCharacterSwap, triggerSpecialSkill]
+    [triggerCharacterSwap, triggerSpecialSkill, handleJumpPress]
   );
 
   // Main Canvas Game Loop
@@ -406,6 +417,8 @@ export function useGameEngine({
     const CANVAS_WIDTH = canvas.width;
     const CANVAS_HEIGHT = canvas.height;
     const GROUND_Y = CANVAS_HEIGHT - 48;
+    const WORLD_WIDTH = levelConfig?.worldWidth || 3200;
+    const BOSS_ARENA_X = levelConfig?.bossArenaX || 2450;
 
     const state = gameStateRef.current;
     const keys = keysRef.current;
@@ -491,14 +504,12 @@ export function useGameEngine({
       p.x += p.vx;
       p.y += p.vy;
 
-      // Boundary check X
+      // Stage boundary check X (Contra side-scrolling style)
       if (p.x < 10) p.x = 10;
-      if (p.x + p.width > CANVAS_WIDTH - 10) p.x = CANVAS_WIDTH - p.width - 10;
-
-      // Platform collisions
-      p.onGround = false;
+      if (p.x + p.width > WORLD_WIDTH - 20) p.x = WORLD_WIDTH - p.width - 20;
 
       // Ground collision
+      p.onGround = false;
       if (p.y + p.height >= GROUND_Y) {
         p.y = GROUND_Y - p.height;
         p.vy = 0;
@@ -506,7 +517,7 @@ export function useGameEngine({
         p.jumpCount = 0;
       }
 
-      // Solid platform collision (from above)
+      // Platform collision
       platforms.forEach((plat) => {
         if (
           p.x + p.width > plat.x &&
@@ -522,6 +533,29 @@ export function useGameEngine({
         }
       });
 
+      // ==========================================
+      // CONTRA (1987) CAMERA SCROLLING
+      // ==========================================
+      let targetCamX = p.x - 240;
+      // In boss fight arena, camera locks to the arena area
+      if (state.bossSpawned) {
+        targetCamX = Math.min(Math.max(BOSS_ARENA_X - 60, targetCamX), WORLD_WIDTH - CANVAS_WIDTH);
+      }
+      targetCamX = Math.max(0, Math.min(WORLD_WIDTH - CANVAS_WIDTH, targetCamX));
+      state.cameraX += (targetCamX - state.cameraX) * 0.1;
+
+      // Progress reporting
+      if (onProgressUpdate) {
+        const progressPercent = Math.min(100, Math.round((p.x / BOSS_ARENA_X) * 100));
+        onProgressUpdate({
+          playerX: Math.round(p.x),
+          worldWidth: WORLD_WIDTH,
+          bossArenaX: BOSS_ARENA_X,
+          progressPercent,
+          inBossArena: p.x >= BOSS_ARENA_X
+        });
+      }
+
       // Player shooting
       const isFireReady = p.skillActiveTimer > 0 ? p.shootCooldown <= 3 : p.shootCooldown === 0;
 
@@ -532,7 +566,7 @@ export function useGameEngine({
         const startY = p.y + p.height / 2 - 2;
 
         if (p.character === 'rick') {
-          // Rick: Concentrated Laser with Critical Hit chance
+          // Rick: Laser with critical hit
           soundManager.playLaser();
           const isCritical = Math.random() < 0.25;
           const damage = isCritical ? Math.round(charConf.bulletDamage * 2.5) : charConf.bulletDamage;
@@ -552,7 +586,7 @@ export function useGameEngine({
           createExplosion(startX, startY, isCritical ? '#fde047' : '#39ff14', 4);
           p.shootCooldown = charConf.fireCooldown;
         } else {
-          // Morty: Twin Crystal Scatter Blaster
+          // Morty: Twin scatter blaster
           soundManager.playMortyBlaster();
           const pelletsCount = p.skillActiveTimer > 0 ? 4 : 2;
 
@@ -584,8 +618,7 @@ export function useGameEngine({
         b.x += b.vx;
         b.y += b.vy;
 
-        // Trail particle
-        if (Math.random() < 0.45) {
+        if (Math.random() < 0.4) {
           state.particles.push({
             x: b.x,
             y: b.y + 2,
@@ -598,8 +631,7 @@ export function useGameEngine({
           });
         }
 
-        // Out of bounds
-        if (b.x < 0 || b.x > CANVAS_WIDTH) {
+        if (b.x < state.cameraX - 100 || b.x > state.cameraX + CANVAS_WIDTH + 100) {
           state.bullets.splice(i, 1);
         }
       }
@@ -610,7 +642,6 @@ export function useGameEngine({
         eb.x += eb.vx;
         eb.y += eb.vy;
 
-        // Hit player
         if (
           p.invulnerableTimer === 0 &&
           eb.x < p.x + p.width &&
@@ -627,12 +658,12 @@ export function useGameEngine({
           continue;
         }
 
-        if (eb.x < 0 || eb.x > CANVAS_WIDTH || eb.y > CANVAS_HEIGHT) {
+        if (eb.x < state.cameraX - 100 || eb.x > state.cameraX + CANVAS_WIDTH + 100 || eb.y > CANVAS_HEIGHT) {
           state.enemyBullets.splice(i, 1);
         }
       }
 
-      // Update Powerups (Physics + Collection)
+      // Update Powerups
       for (let i = state.powerups.length - 1; i >= 0; i--) {
         const pw = state.powerups[i];
         pw.vy += 0.25;
@@ -641,14 +672,12 @@ export function useGameEngine({
         pw.life--;
         pw.hoverOffset += 0.08;
 
-        // Ground collision
         if (pw.y >= GROUND_Y - 24) {
           pw.y = GROUND_Y - 24;
           pw.vy = -pw.vy * 0.4;
           pw.vx *= 0.85;
         }
 
-        // Collection by player
         if (
           p.x < pw.x + 28 &&
           p.x + p.width > pw.x &&
@@ -666,7 +695,7 @@ export function useGameEngine({
             if (onScoreBonus) onScoreBonus(300);
             addFloatingText('SKILL READY! +300 PTS', p.x, p.y - 12, '#a855f7');
           } else if (pw.id === 'portal_fluid') {
-            p.invulnerableTimer = 360; // 6s invulnerability
+            p.invulnerableTimer = 360;
             if (onScoreBonus) onScoreBonus(200);
             addFloatingText('HYPER SHIELD! (6s)', p.x, p.y - 12, '#42f56c');
           }
@@ -681,23 +710,24 @@ export function useGameEngine({
       }
 
       // ==========================================
-      // 3. SPAWN AND UPDATE ENEMIES
+      // 3. SPAWN ENEMIES ALONG SCROLLING WORLD
       // ==========================================
       state.spawnTimer++;
       const spawnInterval = levelConfig?.enemySpawnRate || 120;
-      const targetEnemies = levelConfig?.targetEnemies || 10;
+      const targetEnemies = levelConfig?.targetEnemies || 12;
 
-      // Regular enemy spawns
+      // Spawn regular enemies ahead of camera while traveling
       if (
         state.spawnTimer >= spawnInterval &&
-        state.enemiesSpawnedCount < targetEnemies
+        state.enemiesSpawnedCount < targetEnemies &&
+        p.x < BOSS_ARENA_X - 100
       ) {
         state.spawnTimer = 0;
         state.enemiesSpawnedCount++;
 
         const isFlying = Math.random() < 0.35;
         const enemyType = isFlying ? 'flying' : 'walker';
-        const startX = CANVAS_WIDTH + 20;
+        const startX = Math.min(WORLD_WIDTH - 60, state.cameraX + CANVAS_WIDTH + 40 + Math.random() * 80);
         const startY = isFlying ? 120 + Math.random() * 140 : GROUND_Y - 48;
         const speedMultiplier = levelConfig?.enemySpeedMultiplier || 1.0;
 
@@ -722,14 +752,14 @@ export function useGameEngine({
         });
       }
 
-      // Boss Spawn trigger
+      // Boss Spawn Trigger: Player reached the Boss Arena or defeated enough enemies
       if (
         !state.bossSpawned &&
-        state.levelKillsCount >= targetEnemies - 1
+        (p.x >= BOSS_ARENA_X || state.levelKillsCount >= targetEnemies - 1)
       ) {
         state.bossSpawned = true;
         const bossName = levelConfig?.bossName || 'Dimension Master Entity';
-        const bossHealth = levelConfig?.bossHealth || 400;
+        const bossHealth = levelConfig?.bossHealth || 450;
 
         state.enemies.push({
           id: `boss-${levelConfig?.id || 1}`,
@@ -737,9 +767,9 @@ export function useGameEngine({
           type: 'boss',
           name: bossName,
           imageKey: levelConfig?.id === 2 ? 'birdperson' : 'meeseeks',
-          x: CANVAS_WIDTH - 130,
+          x: Math.max(BOSS_ARENA_X + 280, p.x + 300),
           y: GROUND_Y - 96,
-          vx: -0.6,
+          vx: -0.8,
           vy: 0,
           width: 86,
           height: 96,
@@ -753,8 +783,8 @@ export function useGameEngine({
         });
 
         soundManager.playExplosion(true);
-        state.screenShake = 12;
-        addFloatingText('⚠️ DIMENSIONAL BOSS DETECTED! ⚠️', CANVAS_WIDTH / 2 - 140, 80, '#ef4444');
+        state.screenShake = 14;
+        addFloatingText('⚠️ ALERTA: JEFE DIMENSIONAL DETECTADO! ⚠️', p.x - 60, 80, '#ef4444');
       }
 
       // Update enemies
@@ -769,7 +799,8 @@ export function useGameEngine({
           en.x += en.vx;
         } else if (en.isBoss) {
           en.x += en.vx;
-          if (en.x < CANVAS_WIDTH - 240 || en.x > CANVAS_WIDTH - 90) {
+          // Constrain boss within the arena
+          if (en.x < BOSS_ARENA_X + 40 || en.x > WORLD_WIDTH - en.width - 20) {
             en.vx *= -1;
           }
         } else {
@@ -779,7 +810,7 @@ export function useGameEngine({
         // Enemy shooting
         en.shootTimer--;
         if (en.shootTimer <= 0) {
-          en.shootTimer = en.isBoss ? 70 : 150 + Math.random() * 80;
+          en.shootTimer = en.isBoss ? 65 : 140 + Math.random() * 80;
           state.enemyBullets.push({
             x: en.x,
             y: en.y + en.height / 2,
@@ -791,7 +822,7 @@ export function useGameEngine({
           });
         }
 
-        // Bullet vs Enemy Collisions
+        // Bullet collisions
         for (let bIndex = state.bullets.length - 1; bIndex >= 0; bIndex--) {
           const bul = state.bullets[bIndex];
           if (
@@ -813,7 +844,7 @@ export function useGameEngine({
             state.bullets.splice(bIndex, 1);
             createExplosion(bul.x, bul.y, bul.color || '#97ce4c', 6);
 
-            // Enemy defeated
+            // Defeated enemy
             if (en.health <= 0) {
               soundManager.playExplosion(en.isBoss);
               createExplosion(
@@ -823,7 +854,6 @@ export function useGameEngine({
                 en.isBoss ? 45 : 22
               );
 
-              // Combo update
               state.comboCount++;
               state.comboTimer = 150;
               const comboBonus = state.comboCount > 1 ? state.comboCount * 50 : 0;
@@ -836,7 +866,7 @@ export function useGameEngine({
                 state.comboCount >= 3 ? '#fde047' : '#39ff14'
               );
 
-              // 30% chance to drop Powerup
+              // 35% chance to drop powerup
               if (Math.random() < 0.35) {
                 const powerupKeys = ['FLASK', 'MEGA_SEED', 'PORTAL_FLUID'];
                 const selectedKey = powerupKeys[Math.floor(Math.random() * powerupKeys.length)];
@@ -851,7 +881,7 @@ export function useGameEngine({
                   y: en.y + en.height / 2 - 12,
                   vx: (Math.random() - 0.5) * 2,
                   vy: -3.5,
-                  life: 480, // 8s
+                  life: 480,
                   hoverOffset: 0
                 });
               }
@@ -861,7 +891,7 @@ export function useGameEngine({
 
               if (en.isBoss) {
                 state.bossDefeated = true;
-                state.screenShake = 20;
+                state.screenShake = 22;
                 onVictory();
               }
 
@@ -887,15 +917,13 @@ export function useGameEngine({
           onPlayerDamage(en.isBoss ? 35 : 20);
         }
 
-        // Cleanup out of screen
-        if (state.enemies[i] && en.x < -80) {
+        // Out of bounds cleanup behind camera
+        if (state.enemies[i] && en.x < state.cameraX - 160) {
           state.enemies.splice(i, 1);
         }
       }
 
-      // ==========================================
-      // 4. PARTICLES & FLOATING TEXTS
-      // ==========================================
+      // Particles
       for (let i = state.particles.length - 1; i >= 0; i--) {
         const pt = state.particles[i];
         pt.x += pt.vx;
@@ -904,6 +932,7 @@ export function useGameEngine({
         if (pt.life <= 0) state.particles.splice(i, 1);
       }
 
+      // Floating texts
       for (let i = state.floatingTexts.length - 1; i >= 0; i--) {
         const ft = state.floatingTexts[i];
         ft.y += ft.vy;
@@ -913,47 +942,56 @@ export function useGameEngine({
       }
 
       // ==========================================
-      // 5. CANVAS RENDERING
+      // 4. CANVAS RENDERING WITH PARALLAX SCROLLING
       // ==========================================
       ctx.save();
 
-      // Apply Screen Shake
+      // Screen Shake
       if (state.screenShake > 0) {
         const shakeX = (Math.random() - 0.5) * state.screenShake * 1.5;
         const shakeY = (Math.random() - 0.5) * state.screenShake * 1.5;
         ctx.translate(shakeX, shakeY);
       }
 
-      // Sky Background
+      // Sky Background (Fixed)
       ctx.fillStyle = levelConfig?.bgColor || '#050816';
       ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
 
-      // Star / Dimensional grid
-      ctx.fillStyle = 'rgba(66, 245, 108, 0.08)';
-      for (let x = 0; x < CANVAS_WIDTH; x += 40) {
-        ctx.fillRect(x, 0, 1, CANVAS_HEIGHT);
-      }
-      for (let y = 0; y < CANVAS_HEIGHT; y += 40) {
-        ctx.fillRect(0, y, CANVAS_WIDTH, 1);
-      }
+      // Parallax Layer 1: Distant Stars & Deep Cosmos (0.12x speed)
+      drawFarParallax(ctx, CANVAS_WIDTH, CANVAS_HEIGHT, state.cameraX * 0.12, levelConfig?.id || 1);
 
-      // Swirling Background Portal
-      const portalColor = levelConfig?.portalColor || '#42f56c';
+      // Parallax Layer 2: Mid-distance Iconic Lore (0.42x speed)
+      // (Rick's Garage, Space Cruiser, Cromulon Head, Citadel Megastructures)
+      drawMidParallax(ctx, CANVAS_WIDTH, CANVAS_HEIGHT, state.cameraX * 0.42, levelConfig?.id || 1, GROUND_Y);
+
+      // ==========================================
+      // WORLD SPACE RENDERING (1.0x Camera Translation)
+      // ==========================================
       ctx.save();
-      ctx.beginPath();
-      ctx.arc(CANVAS_WIDTH - 80, 120, 55, 0, Math.PI * 2);
-      ctx.fillStyle = 'rgba(124, 58, 237, 0.25)';
-      ctx.fill();
-      ctx.lineWidth = 4;
-      ctx.strokeStyle = portalColor;
-      ctx.setLineDash([8, 6]);
-      ctx.stroke();
+      ctx.translate(-state.cameraX, 0);
+
+      const portalColor = levelConfig?.portalColor || '#42f56c';
+
+      // Ground Terrain (Full 3200px length)
+      ctx.save();
+      ctx.fillStyle = levelConfig?.groundColor || '#111827';
+      ctx.fillRect(0, GROUND_Y, WORLD_WIDTH, CANVAS_HEIGHT - GROUND_Y);
+      ctx.fillStyle = portalColor;
+      ctx.fillRect(0, GROUND_Y, WORLD_WIDTH, 4);
+      // Terrain grid lines
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.04)';
+      for (let gx = 0; gx < WORLD_WIDTH; gx += 60) {
+        ctx.fillRect(gx, GROUND_Y, 2, CANVAS_HEIGHT - GROUND_Y);
+      }
       ctx.restore();
 
-      // Platforms
+      // Boss Arena Entrance Archway
+      drawArenaPortalArch(ctx, BOSS_ARENA_X, GROUND_Y, portalColor);
+
+      // Platforms along the world
       platforms.forEach((plat) => {
         ctx.save();
-        ctx.fillStyle = 'rgba(17, 24, 39, 0.9)';
+        ctx.fillStyle = 'rgba(17, 24, 39, 0.94)';
         ctx.strokeStyle = portalColor;
         ctx.lineWidth = 2;
         ctx.fillRect(plat.x, plat.y, plat.width, plat.height);
@@ -965,15 +1003,7 @@ export function useGameEngine({
         ctx.restore();
       });
 
-      // Ground Terrain
-      ctx.save();
-      ctx.fillStyle = levelConfig?.groundColor || '#111827';
-      ctx.fillRect(0, GROUND_Y, CANVAS_WIDTH, CANVAS_HEIGHT - GROUND_Y);
-      ctx.fillStyle = portalColor;
-      ctx.fillRect(0, GROUND_Y, CANVAS_WIDTH, 3);
-      ctx.restore();
-
-      // Draw Bullets (Player)
+      // Bullets
       state.bullets.forEach((b) => {
         ctx.save();
         ctx.fillStyle = b.color || '#42f56c';
@@ -983,7 +1013,7 @@ export function useGameEngine({
         ctx.restore();
       });
 
-      // Draw Enemy Bullets
+      // Enemy Bullets
       state.enemyBullets.forEach((eb) => {
         ctx.save();
         ctx.fillStyle = '#ef4444';
@@ -995,13 +1025,13 @@ export function useGameEngine({
         ctx.restore();
       });
 
-      // Draw Powerups
+      // Powerups
       state.powerups.forEach((pw) => {
         ctx.save();
         const hoverY = pw.y + Math.sin(pw.hoverOffset) * 5;
         ctx.shadowColor = pw.color;
         ctx.shadowBlur = 12;
-        ctx.fillStyle = 'rgba(17, 24, 39, 0.85)';
+        ctx.fillStyle = 'rgba(17, 24, 39, 0.9)';
         ctx.strokeStyle = pw.color;
         ctx.lineWidth = 2;
         ctx.beginPath();
@@ -1016,7 +1046,7 @@ export function useGameEngine({
         ctx.restore();
       });
 
-      // Draw Enemies with Animated Limbs
+      // Enemies
       state.enemies.forEach((en) => {
         ctx.save();
         if (en.hitFlash > 0) {
@@ -1041,21 +1071,19 @@ export function useGameEngine({
         ctx.restore();
       });
 
-      // ==========================================
-      // DRAW PLAYER (ANIMATED FULL BODY: RICK / MORTY)
-      // ==========================================
+      // Player Body Rigged from Starburns Model Sheets
       if (p.invulnerableTimer % 6 < 3) {
         ctx.save();
         const avatarImg =
           p.character === 'rick' ? imageCacheRef.current.player : imageCacheRef.current.support;
 
         if (p.character === 'rick') {
-          drawAnimatedRickBody(ctx, p, avatarImg);
+          drawStarburnsRick(ctx, p, avatarImg);
         } else {
-          drawAnimatedMortyBody(ctx, p, avatarImg);
+          drawStarburnsMorty(ctx, p, avatarImg);
         }
 
-        // Portal Swap vortex animation
+        // Portal Swap vortex
         if (p.portalSwapTimer > 0) {
           ctx.save();
           ctx.translate(p.x + p.width / 2, p.y + p.height / 2);
@@ -1071,11 +1099,11 @@ export function useGameEngine({
         ctx.restore();
       }
 
-      // Draw Morty / Rick Companion Hovering
+      // Companion Floating
       const compKey = p.character === 'rick' ? 'support' : 'player';
       const compImg = imageCacheRef.current[compKey];
       const compX = p.facing === 'right' ? p.x - 30 : p.x + p.width + 6;
-      const compY = p.y - 12 + Math.sin(Date.now() / 250) * 5;
+      const compY = p.y - 14 + Math.sin(Date.now() / 250) * 5;
 
       ctx.save();
       if (compImg && compImg.complete) {
@@ -1086,13 +1114,12 @@ export function useGameEngine({
         ctx.arc(compX + 13, compY + 14, 11, 0, Math.PI * 2);
         ctx.fill();
       }
-      // Floating label
       ctx.font = '9px Outfit, sans-serif';
       ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
       ctx.fillText(p.character === 'rick' ? 'Morty' : 'Rick', compX, compY - 4);
       ctx.restore();
 
-      // Draw Particles
+      // Particles
       state.particles.forEach((pt) => {
         ctx.save();
         ctx.fillStyle = pt.color;
@@ -1103,7 +1130,7 @@ export function useGameEngine({
         ctx.restore();
       });
 
-      // Draw Floating Texts
+      // Floating Texts
       state.floatingTexts.forEach((ft) => {
         ctx.save();
         ctx.fillStyle = ft.color;
@@ -1113,14 +1140,18 @@ export function useGameEngine({
         ctx.restore();
       });
 
-      // Draw Active Combo Badge
+      ctx.restore(); // End World Space
+
+      // ==========================================
+      // SCREEN-SPACE OVERLAY (HUD & COMBO)
+      // ==========================================
       if (state.comboCount > 1) {
         ctx.save();
         ctx.font = 'bold 16px Orbitron, monospace';
         ctx.fillStyle = '#fde047';
         ctx.shadowColor = '#eab308';
         ctx.shadowBlur = 10;
-        ctx.fillText(`COMBO x${state.comboCount}!`, 20, 40);
+        ctx.fillText(`COMBO x${state.comboCount}!`, 20, 36);
         ctx.restore();
       }
 
@@ -1146,13 +1177,14 @@ export function useGameEngine({
     onPlayerDeath,
     onVictory,
     onHealPlayer,
-    onScoreBonus
+    onScoreBonus,
+    onProgressUpdate
   ]);
 
   const resetEngine = useCallback((_level = 1) => {
     gameStateRef.current = {
       player: {
-        x: 80,
+        x: 100,
         y: 350,
         vx: 0,
         vy: 0,
@@ -1170,6 +1202,7 @@ export function useGameEngine({
         skillActiveTimer: 0,
         portalSwapTimer: 0
       },
+      cameraX: 0,
       bullets: [],
       enemyBullets: [],
       enemies: [],
@@ -1195,15 +1228,370 @@ export function useGameEngine({
 
 /**
  * =========================================================================
- * ANIMATED CHARACTER & ENEMY DRAWING ROUTINES (FULL BODIES + LIMB MOTION)
+ * PARALLAX BACKGROUND LAYERS WITH RICK AND MORTY LORE ARTWORK
  * =========================================================================
  */
 
-function drawAnimatedRickBody(ctx, p, avatarImg) {
+function drawFarParallax(ctx, width, height, offsetX, levelId) {
+  ctx.save();
+  // Twinkling stars
+  ctx.fillStyle = '#ffffff';
+  for (let i = 0; i < 45; i++) {
+    const sx = (i * 73 - (offsetX % width) + width) % width;
+    const sy = (i * 37) % (height - 120);
+    const size = (i % 3) + 1;
+    ctx.globalAlpha = 0.3 + (Math.sin(Date.now() / 600 + i) + 1) * 0.35;
+    ctx.fillRect(sx, sy, size, size);
+  }
+  ctx.globalAlpha = 1.0;
+
+  if (levelId === 3) {
+    // LEVEL 3: GIANT CROMULON HEAD ("SHOW ME WHAT YOU GOT")
+    const cromulonX = (width * 0.65 - (offsetX % width) + width) % width;
+    const cromulonY = 90;
+    drawCromulonHead(ctx, cromulonX, cromulonY);
+  } else if (levelId === 2) {
+    // LEVEL 2: CITADEL NEON SKYLINE
+    ctx.fillStyle = 'rgba(15, 23, 42, 0.45)';
+    for (let b = 0; b < 10; b++) {
+      const bx = (b * 120 - (offsetX % 1200) + 1200) % 1200;
+      const bHeight = 160 + (b % 4) * 40;
+      ctx.fillRect(bx, height - bHeight - 48, 80, bHeight);
+    }
+  }
+  ctx.restore();
+}
+
+function drawMidParallax(ctx, width, height, offsetX, levelId, groundY) {
+  ctx.save();
+
+  if (levelId === 1) {
+    // -------------------------------------------------------------
+    // LEVEL 1 (Earth C-137): Rick's Garage, Space Cruiser & Slime
+    // -------------------------------------------------------------
+    // 1. Rick's Suburban Garage & Smith Residence
+    const garageX = 350 - offsetX;
+    if (garageX > -300 && garageX < width + 100) {
+      drawSmithGarage(ctx, garageX, groundY);
+    }
+
+    // 2. The Space Cruiser (Flying Saucer parked / hovering)
+    const cruiserX = 1150 - offsetX;
+    if (cruiserX > -250 && cruiserX < width + 100) {
+      drawSpaceCruiser(ctx, cruiserX, groundY - 60);
+    }
+
+    // 3. Radioactive Slime Barrels & Transmission Tower
+    const barrelX = 1850 - offsetX;
+    if (barrelX > -150 && barrelX < width + 100) {
+      drawRadioactiveBarrels(ctx, barrelX, groundY);
+    }
+  } else if (levelId === 2) {
+    // -------------------------------------------------------------
+    // LEVEL 2 (Citadel of Ricks): Cybernetic City & Holographic Ads
+    // -------------------------------------------------------------
+    // 1. Simple Rick's Wafers Billboard
+    const ad1X = 550 - offsetX;
+    if (ad1X > -250 && ad1X < width + 100) {
+      drawHoloBillboard(ctx, ad1X, groundY - 180, "SIMPLE RICK'S", 'WAFERS', '#22d3ee');
+    }
+
+    // 2. Vote For Morty Campaign Billboard
+    const ad2X = 1350 - offsetX;
+    if (ad2X > -250 && ad2X < width + 100) {
+      drawHoloBillboard(ctx, ad2X, groundY - 180, 'VOTE FOR MORTY', 'CITADEL 2026', '#facc15');
+    }
+
+    // 3. Council of Ricks Crest
+    const crestX = 2050 - offsetX;
+    if (crestX > -200 && crestX < width + 100) {
+      drawCouncilCrest(ctx, crestX, groundY - 190);
+    }
+  } else {
+    // -------------------------------------------------------------
+    // LEVEL 3 (Final Dimension): Cosmic Singularity & Reality Rifts
+    // -------------------------------------------------------------
+    const riftX = 900 - offsetX;
+    if (riftX > -300 && riftX < width + 100) {
+      drawRealityRiftShard(ctx, riftX, groundY - 160);
+    }
+    const ruinsX = 1750 - offsetX;
+    if (ruinsX > -300 && ruinsX < width + 100) {
+      drawCosmicRuins(ctx, ruinsX, groundY);
+    }
+  }
+
+  ctx.restore();
+}
+
+/**
+ * Procedural Vector Art for Rick's House / Garage
+ */
+function drawSmithGarage(ctx, x, groundY) {
+  ctx.save();
+  ctx.fillStyle = '#1e293b';
+  // House Body
+  ctx.fillRect(x, groundY - 130, 200, 130);
+  // Roof triangle
+  ctx.beginPath();
+  ctx.moveTo(x - 15, groundY - 130);
+  ctx.lineTo(x + 100, groundY - 190);
+  ctx.lineTo(x + 215, groundY - 130);
+  ctx.closePath();
+  ctx.fillStyle = '#0f172a';
+  ctx.fill();
+
+  // Garage Door
+  ctx.fillStyle = '#334155';
+  ctx.fillRect(x + 20, groundY - 95, 85, 95);
+  // Garage Lines
+  ctx.strokeStyle = '#1e293b';
+  ctx.lineWidth = 2;
+  for (let l = 1; l <= 4; l++) {
+    ctx.beginPath();
+    ctx.moveTo(x + 20, groundY - l * 20);
+    ctx.lineTo(x + 105, groundY - l * 20);
+    ctx.stroke();
+  }
+
+  // Window with Rick's workbench green glow
+  ctx.fillStyle = '#42f56c';
+  ctx.shadowColor = '#42f56c';
+  ctx.shadowBlur = 10;
+  ctx.fillRect(x + 130, groundY - 80, 45, 40);
+  ctx.shadowBlur = 0;
+
+  // Label
+  ctx.font = '10px Outfit, sans-serif';
+  ctx.fillStyle = '#94a3b8';
+  ctx.fillText("RICK'S GARAGE", x + 20, groundY - 102);
+  ctx.restore();
+}
+
+/**
+ * Procedural Space Cruiser (Flying Saucer)
+ */
+function drawSpaceCruiser(ctx, x, y) {
+  ctx.save();
+  const hover = Math.sin(Date.now() / 300) * 4;
+  ctx.translate(x, y + hover);
+
+  // Thruster Green Glow
+  ctx.fillStyle = 'rgba(66, 245, 108, 0.4)';
+  ctx.beginPath();
+  ctx.ellipse(50, 40, 40, 14, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Glass Dome
+  ctx.fillStyle = 'rgba(56, 189, 248, 0.7)';
+  ctx.strokeStyle = '#0284c7';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.arc(50, 12, 22, Math.PI, Math.PI * 2);
+  ctx.fill();
+  ctx.stroke();
+
+  // Saucer Body (Garbage Can Thruster aesthetic)
+  ctx.fillStyle = '#64748b';
+  ctx.beginPath();
+  ctx.ellipse(50, 20, 55, 16, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Headlights
+  ctx.fillStyle = '#fde047';
+  ctx.fillRect(15, 18, 10, 6);
+  ctx.fillRect(75, 18, 10, 6);
+
+  ctx.font = '9px Outfit, sans-serif';
+  ctx.fillStyle = '#38bdf8';
+  ctx.fillText('SPACE CRUISER C-137', 5, -8);
+  ctx.restore();
+}
+
+/**
+ * Giant CROMULON Head ("SHOW ME WHAT YOU GOT")
+ */
+function drawCromulonHead(ctx, x, y) {
+  ctx.save();
+  ctx.translate(x, y);
+
+  // Golden Cosmic Aura
+  ctx.fillStyle = 'rgba(250, 204, 21, 0.15)';
+  ctx.beginPath();
+  ctx.arc(0, 0, 85, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Head Shape
+  ctx.fillStyle = '#ca8a04';
+  ctx.strokeStyle = '#eab308';
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.ellipse(0, 0, 65, 80, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.stroke();
+
+  // Eyes (Glowing Yellow)
+  ctx.fillStyle = '#fef08a';
+  ctx.shadowColor = '#eab308';
+  ctx.shadowBlur = 15;
+  ctx.beginPath();
+  ctx.arc(-22, -15, 12, 0, Math.PI * 2);
+  ctx.arc(22, -15, 12, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Pupils
+  ctx.fillStyle = '#713f12';
+  ctx.beginPath();
+  ctx.arc(-22, -15, 4, 0, Math.PI * 2);
+  ctx.arc(22, -15, 4, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Big Flat Nose
+  ctx.strokeStyle = '#854d0e';
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.moveTo(-10, 5);
+  ctx.lineTo(0, 18);
+  ctx.lineTo(10, 5);
+  ctx.stroke();
+
+  // Wide Open Mouth (Singing / Demanding)
+  ctx.fillStyle = '#451a03';
+  ctx.beginPath();
+  ctx.ellipse(0, 42, 28, 16, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Text Banner
+  ctx.font = 'bold 12px Orbitron, sans-serif';
+  ctx.fillStyle = '#fde047';
+  ctx.textAlign = 'center';
+  ctx.fillText('SHOW ME WHAT YOU GOT!', 0, 95);
+  ctx.restore();
+}
+
+/**
+ * Holographic Billboard for Citadel
+ */
+function drawHoloBillboard(ctx, x, y, title, subtitle, color) {
+  ctx.save();
+  ctx.translate(x, y);
+
+  // Pole
+  ctx.strokeStyle = '#334155';
+  ctx.lineWidth = 4;
+  ctx.beginPath();
+  ctx.moveTo(80, 70);
+  ctx.lineTo(80, 180);
+  ctx.stroke();
+
+  // Hologram Screen
+  ctx.fillStyle = 'rgba(15, 23, 42, 0.85)';
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 2;
+  ctx.shadowColor = color;
+  ctx.shadowBlur = 12;
+  ctx.fillRect(0, 0, 160, 70);
+  ctx.strokeRect(0, 0, 160, 70);
+
+  ctx.font = 'bold 11px Orbitron, sans-serif';
+  ctx.fillStyle = color;
+  ctx.textAlign = 'center';
+  ctx.fillText(title, 80, 30);
+
+  ctx.font = '9px Outfit, sans-serif';
+  ctx.fillStyle = '#f8fafc';
+  ctx.fillText(subtitle, 80, 50);
+  ctx.restore();
+}
+
+function drawCouncilCrest(ctx, x, y) {
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.strokeStyle = '#22d3ee';
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.moveTo(0, 0);
+  ctx.lineTo(40, 70);
+  ctx.lineTo(-40, 70);
+  ctx.closePath();
+  ctx.stroke();
+
+  ctx.font = 'bold 10px Orbitron, sans-serif';
+  ctx.fillStyle = '#22d3ee';
+  ctx.textAlign = 'center';
+  ctx.fillText('COUNCIL OF RICKS', 0, 88);
+  ctx.restore();
+}
+
+function drawRadioactiveBarrels(ctx, x, groundY) {
+  ctx.save();
+  ctx.fillStyle = '#3f6212';
+  ctx.fillRect(x, groundY - 40, 30, 40);
+  ctx.fillRect(x + 35, groundY - 35, 28, 35);
+  // Slime pool
+  ctx.fillStyle = '#42f56c';
+  ctx.shadowColor = '#42f56c';
+  ctx.shadowBlur = 10;
+  ctx.beginPath();
+  ctx.ellipse(x + 30, groundY - 2, 45, 8, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+}
+
+function drawRealityRiftShard(ctx, x, y) {
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.strokeStyle = '#a855f7';
+  ctx.lineWidth = 2;
+  ctx.fillStyle = 'rgba(168, 85, 247, 0.2)';
+  ctx.beginPath();
+  ctx.moveTo(0, 0);
+  ctx.lineTo(35, -45);
+  ctx.lineTo(70, 15);
+  ctx.lineTo(30, 60);
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+  ctx.restore();
+}
+
+function drawCosmicRuins(ctx, x, groundY) {
+  ctx.save();
+  ctx.fillStyle = '#3b0764';
+  ctx.fillRect(x, groundY - 90, 45, 90);
+  ctx.fillRect(x + 55, groundY - 140, 40, 140);
+  ctx.restore();
+}
+
+function drawArenaPortalArch(ctx, x, groundY, color) {
+  ctx.save();
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 6;
+  ctx.shadowColor = color;
+  ctx.shadowBlur = 16;
+  ctx.beginPath();
+  ctx.arc(x, groundY - 80, 80, Math.PI, 0);
+  ctx.stroke();
+
+  ctx.font = 'bold 12px Orbitron, sans-serif';
+  ctx.fillStyle = color;
+  ctx.textAlign = 'center';
+  ctx.fillText('⚡ BOSS SECTOR ⚡', x, groundY - 175);
+  ctx.restore();
+}
+
+/**
+ * =========================================================================
+ * 2D RIGGED CHARACTER MODELS (EXACT STARBURNS INDUSTRIES MODEL SHEETS)
+ * =========================================================================
+ */
+
+function drawStarburnsRick(ctx, p, avatarImg) {
   const { x, y, width, height, facing, runCycle, onGround, recoilTimer } = p;
   const isMoving = Math.abs(p.vx) > 0.3;
   const legCycle = onGround && isMoving ? runCycle : 0;
-  const bobbing = onGround && isMoving ? Math.sin(legCycle * 2) * 2 : Math.sin(Date.now() / 350) * 1.2;
+  // Athletic runner stride from Rick Body Expressions sheet
+  const bobbing = onGround && isMoving ? Math.sin(legCycle * 2) * 2.5 : Math.sin(Date.now() / 350) * 1.2;
 
   ctx.save();
   ctx.translate(x + width / 2, y + height / 2 + bobbing);
@@ -1211,90 +1599,226 @@ function drawAnimatedRickBody(ctx, p, avatarImg) {
     ctx.scale(-1, 1);
   }
 
-  // 1. LAB COAT FLAP (Back)
-  ctx.fillStyle = '#e2e8f0';
+  // 1. BILLOWING LAB COAT (Flapping back dynamically like Starburns reference)
+  ctx.fillStyle = '#f8fafc';
   ctx.beginPath();
-  const coatFlap = isMoving ? Math.sin(legCycle) * 6 : 0;
-  ctx.moveTo(-10, 6);
-  ctx.lineTo(-16 - coatFlap, 22);
-  ctx.lineTo(-6, 22);
-  ctx.lineTo(-4, 6);
+  const coatSweep = isMoving ? Math.sin(legCycle) * 14 + Math.abs(p.vx) * 3 : 0;
+  const jumpBillow = !onGround ? 8 : 0;
+  ctx.moveTo(-10, 8);
+  ctx.lineTo(-18 - coatSweep, 28 - jumpBillow);
+  ctx.lineTo(-6, 28);
+  ctx.lineTo(-4, 8);
   ctx.fill();
 
-  // 2. LEGS & BLACK SHOES
-  const leftLegAngle = onGround ? Math.sin(legCycle) * 0.45 : -0.25;
-  const rightLegAngle = onGround ? -Math.sin(legCycle) * 0.45 : 0.35;
+  // 2. LONG LANKY LEGS (Brown Pants + Black Shoes as in turnaround sheet)
+  const leftLegAngle = onGround ? Math.sin(legCycle) * 0.55 : -0.3;
+  const rightLegAngle = onGround ? -Math.sin(legCycle) * 0.55 : 0.4;
 
-  // Left Leg (Trousers: #78350f)
+  // Left Leg
   ctx.save();
-  ctx.translate(-5, 12);
+  ctx.translate(-5, 14);
   ctx.rotate(leftLegAngle);
   ctx.fillStyle = '#78350f';
-  ctx.fillRect(-3, 0, 6, 12);
-  // Shoe
+  ctx.fillRect(-2.5, 0, 5, 14);
+  // Black shoe
   ctx.fillStyle = '#0f172a';
-  ctx.fillRect(-4, 11, 8, 4);
+  ctx.fillRect(-3, 13, 8, 4);
   ctx.restore();
 
   // Right Leg
   ctx.save();
-  ctx.translate(5, 12);
+  ctx.translate(5, 14);
   ctx.rotate(rightLegAngle);
   ctx.fillStyle = '#78350f';
-  ctx.fillRect(-3, 0, 6, 12);
-  // Shoe
+  ctx.fillRect(-2.5, 0, 5, 14);
+  // Black shoe
   ctx.fillStyle = '#0f172a';
-  ctx.fillRect(-4, 11, 8, 4);
+  ctx.fillRect(-3, 13, 8, 4);
   ctx.restore();
 
-  // 3. TORSO (Turquoise Shirt + White Lab Coat + Belt)
-  // Lab coat base
+  // 3. TORSO (Lab Coat + Turquoise Undershirt + Belt with Brass Buckle)
   ctx.fillStyle = '#f8fafc';
-  ctx.fillRect(-10, -8, 20, 20);
+  ctx.fillRect(-10, -10, 20, 24);
 
-  // Turquoise shirt in center
+  // Turquoise shirt (#00b5cc / #06b6d4)
   ctx.fillStyle = '#06b6d4';
   ctx.beginPath();
-  ctx.moveTo(-4, -8);
-  ctx.lineTo(4, -8);
-  ctx.lineTo(3, 8);
-  ctx.lineTo(-3, 8);
+  ctx.moveTo(-4, -10);
+  ctx.lineTo(4, -10);
+  ctx.lineTo(3, 10);
+  ctx.lineTo(-3, 10);
   ctx.fill();
 
-  // Belt
+  // Black belt with brass buckle
   ctx.fillStyle = '#1e293b';
-  ctx.fillRect(-9, 8, 18, 3);
-  ctx.fillStyle = '#f59e0b'; // Buckle
-  ctx.fillRect(-2, 8, 4, 3);
+  ctx.fillRect(-9, 10, 18, 3.5);
+  ctx.fillStyle = '#f59e0b';
+  ctx.fillRect(-2, 10, 4, 3.5);
 
-  // 4. ARMS & PORTAL GUN
+  // 4. ARMS & PORTAL GUN (Starburns aiming posture with recoil)
   const recoilOffset = recoilTimer > 0 ? -recoilTimer : 0;
   ctx.save();
-  ctx.translate(8 + recoilOffset, -1);
+  ctx.translate(9 + recoilOffset, -2);
 
-  // Aiming Arm
+  // Arm in lab coat
   ctx.fillStyle = '#f8fafc';
-  ctx.fillRect(-6, -4, 10, 5);
+  ctx.fillRect(-6, -4, 11, 5);
 
-  // Gun Body
+  // Portal Gun Chasis
   ctx.fillStyle = '#cbd5e1';
-  ctx.fillRect(0, -4, 13, 6);
+  ctx.fillRect(1, -4, 14, 6);
   ctx.fillStyle = '#475569';
-  ctx.fillRect(11, -3, 3, 4);
+  ctx.fillRect(13, -3, 4, 4);
 
-  // Portal fluid tube
+  // Green Fluid Reservoir
   ctx.fillStyle = '#39ff14';
   ctx.shadowColor = '#39ff14';
-  ctx.shadowBlur = 6;
-  ctx.fillRect(3, -7, 6, 3);
+  ctx.shadowBlur = 8;
+  ctx.fillRect(4, -8, 7, 4);
   ctx.shadowBlur = 0;
 
-  // Red antenna
+  // Red Antenna
   ctx.fillStyle = '#ef4444';
-  ctx.fillRect(0, -8, 2, 4);
+  ctx.fillRect(2, -9, 2, 5);
   ctx.restore();
 
-  // 5. HEAD (Rick Sanchez Avatar or Detailed Face)
+  // 5. RICK HEAD & 12 SPIKY HAIR POINTS (From Starburns Model Sheet)
+  if (avatarImg && avatarImg.complete) {
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(0, -22, 15, 0, Math.PI * 2);
+    ctx.clip();
+    ctx.drawImage(avatarImg, -15, -37, 30, 30);
+    ctx.restore();
+    ctx.fillStyle = '#a5f3fc';
+    ctx.beginPath();
+    ctx.arc(0, -26, 15, Math.PI, Math.PI * 2);
+    ctx.fill();
+  } else {
+    // Exact Spiky hair silhouette from reference sheet
+    ctx.fillStyle = '#a5f3fc';
+    const spikeCoords = [-16, -12, -8, -4, 0, 4, 8, 12, 16];
+    spikeCoords.forEach((sx) => {
+      ctx.beginPath();
+      ctx.moveTo(sx - 3, -26);
+      ctx.lineTo(sx, -39);
+      ctx.lineTo(sx + 3, -26);
+      ctx.fill();
+    });
+
+    // Head oval
+    ctx.fillStyle = '#ffedd5';
+    ctx.beginPath();
+    ctx.ellipse(0, -20, 11, 14, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Unibrow
+    ctx.strokeStyle = '#0891b2';
+    ctx.lineWidth = 2.5;
+    ctx.beginPath();
+    ctx.moveTo(-8, -24);
+    ctx.lineTo(8, -24);
+    ctx.stroke();
+
+    // Eyes
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath();
+    ctx.arc(-4.5, -19, 3.5, 0, Math.PI * 2);
+    ctx.arc(4.5, -19, 3.5, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.fillStyle = '#0f172a';
+    ctx.beginPath();
+    ctx.arc(-3.5, -19, 1.2, 0, Math.PI * 2);
+    ctx.arc(5.5, -19, 1.2, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Drool on chin
+    ctx.fillStyle = '#39ff14';
+    ctx.fillRect(1, -12, 2.5, 3.5);
+  }
+
+  ctx.restore();
+}
+
+function drawStarburnsMorty(ctx, p, avatarImg) {
+  const { x, y, width, height, facing, runCycle, onGround, recoilTimer, skillActiveTimer } = p;
+  const isMoving = Math.abs(p.vx) > 0.3;
+  const legCycle = onGround && isMoving ? runCycle : 0;
+  // Hysterical sprint from Morty Body Expressions sheet
+  const bobbing = onGround && isMoving ? Math.sin(legCycle * 2) * 2.8 : Math.sin(Date.now() / 300) * 1.2;
+
+  ctx.save();
+  ctx.translate(x + width / 2, y + height / 2 + bobbing);
+  if (facing === 'left') {
+    ctx.scale(-1, 1);
+  }
+
+  // Death Crystal Aura
+  if (skillActiveTimer > 0) {
+    ctx.save();
+    ctx.strokeStyle = '#c084fc';
+    ctx.lineWidth = 2.5;
+    ctx.shadowColor = '#c084fc';
+    ctx.shadowBlur = 16;
+    ctx.beginPath();
+    ctx.arc(0, -4, 25, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  // 1. LEGS (Dark Blue Jeans + Gravity Boots from reference sheet)
+  const leftLegAngle = onGround ? Math.sin(legCycle) * 0.6 : -0.25;
+  const rightLegAngle = onGround ? -Math.sin(legCycle) * 0.6 : 0.35;
+
+  // Left Leg
+  ctx.save();
+  ctx.translate(-4, 11);
+  ctx.rotate(leftLegAngle);
+  ctx.fillStyle = '#1e3a8a';
+  ctx.fillRect(-2.5, 0, 5, 11);
+  // Gravity Boots (Cyan base + Orange strap as in reference sheet)
+  ctx.fillStyle = '#67e8f9';
+  ctx.fillRect(-3, 10, 7, 4);
+  ctx.fillStyle = '#f97316';
+  ctx.fillRect(-3, 9, 7, 2);
+  ctx.restore();
+
+  // Right Leg
+  ctx.save();
+  ctx.translate(4, 11);
+  ctx.rotate(rightLegAngle);
+  ctx.fillStyle = '#1e3a8a';
+  ctx.fillRect(-2.5, 0, 5, 11);
+  // Gravity Boots
+  ctx.fillStyle = '#67e8f9';
+  ctx.fillRect(-3, 10, 7, 4);
+  ctx.fillStyle = '#f97316';
+  ctx.fillRect(-3, 9, 7, 2);
+  ctx.restore();
+
+  // 2. ICONIC YELLOW SHIRT (Compact round body)
+  ctx.fillStyle = '#facc15';
+  ctx.beginPath();
+  ctx.roundRect(-9, -9, 18, 20, 4);
+  ctx.fill();
+
+  // 3. ARMS & BLASTER / CRYSTAL (Panicked motion)
+  const recoilOffset = recoilTimer > 0 ? -recoilTimer : 0;
+  ctx.save();
+  ctx.translate(7 + recoilOffset, -1);
+
+  ctx.fillStyle = '#ffedd5';
+  ctx.fillRect(-3, -3, 8, 4);
+
+  // Weapon
+  ctx.fillStyle = skillActiveTimer > 0 ? '#c084fc' : '#475569';
+  ctx.fillRect(3, -4, 10, 5);
+  ctx.fillStyle = '#facc15';
+  ctx.fillRect(11, -3, 3, 3);
+  ctx.restore();
+
+  // 4. ROUND HEAD & CURLY HAIR (Starburns Model Sheet Turnaround)
   if (avatarImg && avatarImg.complete) {
     ctx.save();
     ctx.beginPath();
@@ -1302,175 +1826,41 @@ function drawAnimatedRickBody(ctx, p, avatarImg) {
     ctx.clip();
     ctx.drawImage(avatarImg, -14, -32, 28, 28);
     ctx.restore();
-    // Cyan hair spikes around head
-    ctx.fillStyle = '#a5f3fc';
+    ctx.fillStyle = '#854d0e';
     ctx.beginPath();
     ctx.arc(0, -22, 14, Math.PI, Math.PI * 2);
     ctx.fill();
   } else {
-    // Stylized procedural Rick Face
-    // Head shape
-    ctx.fillStyle = '#ffedd5';
-    ctx.beginPath();
-    ctx.arc(0, -16, 12, 0, Math.PI * 2);
-    ctx.fill();
-
-    // Spiky cyan hair
-    ctx.fillStyle = '#a5f3fc';
-    const spikes = [-14, -10, -6, -2, 2, 6, 10, 14];
-    spikes.forEach((sx) => {
-      ctx.beginPath();
-      ctx.moveTo(sx - 3, -22);
-      ctx.lineTo(sx, -32);
-      ctx.lineTo(sx + 3, -22);
-      ctx.fill();
-    });
-
-    // Unibrow
-    ctx.strokeStyle = '#0891b2';
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(-7, -19);
-    ctx.lineTo(7, -19);
-    ctx.stroke();
-
-    // Eyes
-    ctx.fillStyle = '#ffffff';
-    ctx.beginPath();
-    ctx.arc(-4, -15, 3.5, 0, Math.PI * 2);
-    ctx.arc(4, -15, 3.5, 0, Math.PI * 2);
-    ctx.fill();
-
-    ctx.fillStyle = '#0f172a';
-    ctx.beginPath();
-    ctx.arc(-3, -15, 1.2, 0, Math.PI * 2);
-    ctx.arc(5, -15, 1.2, 0, Math.PI * 2);
-    ctx.fill();
-
-    // Drool on chin
-    ctx.fillStyle = '#39ff14';
-    ctx.fillRect(1, -9, 2, 3);
-  }
-
-  ctx.restore();
-}
-
-function drawAnimatedMortyBody(ctx, p, avatarImg) {
-  const { x, y, width, height, facing, runCycle, onGround, recoilTimer, skillActiveTimer } = p;
-  const isMoving = Math.abs(p.vx) > 0.3;
-  const legCycle = onGround && isMoving ? runCycle : 0;
-  const bobbing = onGround && isMoving ? Math.sin(legCycle * 2) * 2 : Math.sin(Date.now() / 300) * 1;
-
-  ctx.save();
-  ctx.translate(x + width / 2, y + height / 2 + bobbing);
-  if (facing === 'left') {
-    ctx.scale(-1, 1);
-  }
-
-  // Aura for Death Crystal Skill
-  if (skillActiveTimer > 0) {
-    ctx.save();
-    ctx.strokeStyle = '#c084fc';
-    ctx.lineWidth = 2;
-    ctx.shadowColor = '#c084fc';
-    ctx.shadowBlur = 14;
-    ctx.beginPath();
-    ctx.arc(0, -3, 24, 0, Math.PI * 2);
-    ctx.stroke();
-    ctx.restore();
-  }
-
-  // 1. LEGS (Blue jeans) & WHITE SNEAKERS
-  const leftLegAngle = onGround ? Math.sin(legCycle) * 0.5 : -0.2;
-  const rightLegAngle = onGround ? -Math.sin(legCycle) * 0.5 : 0.3;
-
-  ctx.save();
-  ctx.translate(-4, 10);
-  ctx.rotate(leftLegAngle);
-  ctx.fillStyle = '#2563eb';
-  ctx.fillRect(-2.5, 0, 5, 10);
-  ctx.fillStyle = '#ffffff';
-  ctx.fillRect(-3, 9, 6, 3.5);
-  ctx.restore();
-
-  ctx.save();
-  ctx.translate(4, 10);
-  ctx.rotate(rightLegAngle);
-  ctx.fillStyle = '#2563eb';
-  ctx.fillRect(-2.5, 0, 5, 10);
-  ctx.fillStyle = '#ffffff';
-  ctx.fillRect(-3, 9, 6, 3.5);
-  ctx.restore();
-
-  // 2. TORSO (Iconic Yellow Shirt)
-  ctx.fillStyle = '#facc15';
-  ctx.beginPath();
-  ctx.roundRect(-8, -8, 16, 18, 3);
-  ctx.fill();
-
-  // 3. ARMS & DUAL BLASTER / DEATH CRYSTAL
-  const recoilOffset = recoilTimer > 0 ? -recoilTimer : 0;
-  ctx.save();
-  ctx.translate(6 + recoilOffset, -1);
-
-  // Arm
-  ctx.fillStyle = '#ffedd5';
-  ctx.fillRect(-3, -3, 7, 4);
-
-  // Blaster
-  ctx.fillStyle = skillActiveTimer > 0 ? '#c084fc' : '#475569';
-  ctx.fillRect(2, -4, 9, 5);
-  ctx.fillStyle = '#facc15';
-  ctx.fillRect(9, -3, 3, 3);
-  ctx.restore();
-
-  // 4. HEAD (Morty Avatar or Stylized Face)
-  if (avatarImg && avatarImg.complete) {
-    ctx.save();
-    ctx.beginPath();
-    ctx.arc(0, -17, 13, 0, Math.PI * 2);
-    ctx.clip();
-    ctx.drawImage(avatarImg, -13, -30, 26, 26);
-    ctx.restore();
-    // Curly brown hair
+    // Curly brown cap of hair
     ctx.fillStyle = '#854d0e';
     ctx.beginPath();
-    ctx.arc(0, -21, 13, Math.PI, Math.PI * 2);
-    ctx.fill();
-  } else {
-    // Round curly hair
-    ctx.fillStyle = '#854d0e';
-    ctx.beginPath();
-    ctx.arc(0, -16, 12, 0, Math.PI * 2);
+    ctx.arc(0, -18, 13, 0, Math.PI * 2);
     ctx.fill();
 
     // Round face
     ctx.fillStyle = '#ffedd5';
     ctx.beginPath();
-    ctx.arc(0, -14, 10.5, 0, Math.PI * 2);
+    ctx.arc(0, -15, 11.5, 0, Math.PI * 2);
     ctx.fill();
 
-    // Wide worried eyes
+    // Big round anxious eyes
     ctx.fillStyle = '#ffffff';
     ctx.beginPath();
-    ctx.arc(-3.5, -14, 3.5, 0, Math.PI * 2);
-    ctx.arc(3.5, -14, 3.5, 0, Math.PI * 2);
+    ctx.arc(-4, -15, 4, 0, Math.PI * 2);
+    ctx.arc(4, -15, 4, 0, Math.PI * 2);
     ctx.fill();
 
     ctx.fillStyle = '#0f172a';
     ctx.beginPath();
-    ctx.arc(-2.5, -14, 1.2, 0, Math.PI * 2);
-    ctx.arc(4.5, -14, 1.2, 0, Math.PI * 2);
+    ctx.arc(-3, -15, 1.4, 0, Math.PI * 2);
+    ctx.arc(5, -15, 1.4, 0, Math.PI * 2);
     ctx.fill();
 
-    // Anxious wiggly mouth
-    ctx.strokeStyle = '#0f172a';
-    ctx.lineWidth = 1;
+    // Panicked open mouth
+    ctx.fillStyle = '#451a03';
     ctx.beginPath();
-    ctx.moveTo(-3, -9);
-    ctx.lineTo(0, -8);
-    ctx.lineTo(3, -9);
-    ctx.stroke();
+    ctx.arc(0, -8, 3, 0, Math.PI);
+    ctx.fill();
   }
 
   ctx.restore();
@@ -1488,55 +1878,48 @@ function drawAnimatedEnemy(ctx, en, img) {
   ctx.translate(x + width / 2, y + height / 2);
 
   if (isBoss) {
-    // Boss: Alpha Entity / Evil Morty style
     ctx.fillStyle = '#7c3aed';
     ctx.beginPath();
-    ctx.roundRect(-width / 2, -height / 2, width, height, 8);
+    ctx.roundRect(-width / 2, -height / 2, width, height, 10);
     ctx.fill();
 
-    // Boss Core
+    // Core
     ctx.fillStyle = '#a855f7';
     ctx.shadowColor = '#a855f7';
-    ctx.shadowBlur = 12;
+    ctx.shadowBlur = 14;
     ctx.beginPath();
-    ctx.arc(0, 0, 16, 0, Math.PI * 2);
+    ctx.arc(0, 0, 18, 0, Math.PI * 2);
     ctx.fill();
   } else if (type === 'flying') {
-    // Birdperson / Drone: Hovering with flapping wings
-    const wingFlap = Math.sin(runCycle * 1.5) * 8;
+    const wingFlap = Math.sin(runCycle * 1.6) * 9;
     ctx.fillStyle = '#38bdf8';
-    // Wings
     ctx.beginPath();
-    ctx.moveTo(-16, -10 + wingFlap);
+    ctx.moveTo(-18, -10 + wingFlap);
     ctx.lineTo(0, 0);
-    ctx.lineTo(16, -10 + wingFlap);
+    ctx.lineTo(18, -10 + wingFlap);
     ctx.lineWidth = 4;
     ctx.strokeStyle = '#0284c7';
     ctx.stroke();
 
-    // Body
     ctx.fillStyle = '#0284c7';
     ctx.beginPath();
     ctx.arc(0, 0, 14, 0, Math.PI * 2);
     ctx.fill();
   } else {
-    // Mr. Meeseeks: Spindly blue walker
-    const legAngle = Math.sin(runCycle) * 0.4;
-    // Legs
+    // Meeseeks Walker with noodle limbs
+    const legAngle = Math.sin(runCycle) * 0.45;
     ctx.strokeStyle = '#0284c7';
-    ctx.lineWidth = 3;
+    ctx.lineWidth = 3.5;
     ctx.beginPath();
     ctx.moveTo(-6, 8);
-    ctx.lineTo(-6 - legAngle * 10, 22);
+    ctx.lineTo(-6 - legAngle * 12, 22);
     ctx.moveTo(6, 8);
-    ctx.lineTo(6 + legAngle * 10, 22);
+    ctx.lineTo(6 + legAngle * 12, 22);
     ctx.stroke();
 
-    // Slender Body
     ctx.fillStyle = '#0284c7';
     ctx.fillRect(-8, -6, 16, 18);
 
-    // Head with orange tuft
     ctx.beginPath();
     ctx.arc(0, -14, 11, 0, Math.PI * 2);
     ctx.fill();
@@ -1546,7 +1929,6 @@ function drawAnimatedEnemy(ctx, en, img) {
     ctx.arc(0, -25, 4, 0, Math.PI * 2);
     ctx.fill();
 
-    // Smile
     ctx.fillStyle = '#ffffff';
     ctx.beginPath();
     ctx.arc(0, -12, 5, 0, Math.PI);

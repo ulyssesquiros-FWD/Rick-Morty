@@ -158,7 +158,97 @@
 }
 
 .hud-lives-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
   margin-top: 0.25rem;
+}
+
+.hud-jump-badge {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  font-weight: 800;
+  color: #38bdf8;
+  background: rgba(56, 189, 248, 0.15);
+  border: 1px solid rgba(56, 189, 248, 0.35);
+  padding: 0.1rem 0.4rem;
+  border-radius: 4px;
+}
+
+/* Map Progress Track (Contra 1987) */
+.hud-map-progress-block {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  min-width: 170px;
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  padding: 0.4rem 0.75rem;
+  border-radius: var(--radius-md);
+}
+
+.hud-map-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.hud-boss-alert {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  font-weight: 800;
+  color: var(--portal-green-bright);
+}
+
+.hud-boss-alert.in-boss {
+  color: #ef4444;
+  animation: pulseWarning 0.8s infinite alternate;
+}
+
+@keyframes pulseWarning {
+  from { opacity: 0.7; transform: scale(0.98); }
+  to { opacity: 1.0; transform: scale(1.05); }
+}
+
+.hud-map-track {
+  position: relative;
+  width: 100%;
+  height: 10px;
+  background: rgba(0, 0, 0, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: var(--radius-full);
+  overflow: visible;
+}
+
+.hud-map-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #42f56c, #22d3ee);
+  border-radius: var(--radius-full);
+  transition: width 0.2s ease-out;
+}
+
+.hud-map-marker {
+  position: absolute;
+  top: -6px;
+  transform: translateX(-50%);
+  font-size: 0.85rem;
+  line-height: 1;
+  transition: left 0.2s ease-out;
+}
+
+.hud-map-boss-flag {
+  position: absolute;
+  right: -8px;
+  top: -7px;
+  font-size: 0.85rem;
+  line-height: 1;
+}
+
+.hud-map-footer {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.65rem;
+  color: var(--text-secondary);
 }
 
 .hud-label {

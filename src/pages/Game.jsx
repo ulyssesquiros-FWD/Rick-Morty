@@ -1,4 +1,4 @@
-import { useEffect, useCallback, useRef, useMemo } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useGame } from '../context/GameContext';
 import { useRickMorty } from '../hooks/useRickMorty';
@@ -62,10 +62,25 @@ export default function Game() {
   const controlsRef = useRef(null);
   const finishedRef = useRef(false);
 
+  const [levelProgress, setLevelProgress] = useState({
+    playerX: 100,
+    worldWidth: levelConfig.worldWidth || 3200,
+    bossArenaX: levelConfig.bossArenaX || 2450,
+    progressPercent: 0,
+    inBossArena: false
+  });
+
   // Initialize level when character assets are available and ready
   useEffect(() => {
     if (!apiLoading && !apiError) {
       finishedRef.current = false;
+      setLevelProgress({
+        playerX: 100,
+        worldWidth: levelConfig.worldWidth || 3200,
+        bossArenaX: levelConfig.bossArenaX || 2450,
+        progressPercent: 0,
+        inBossArena: false
+      });
       resetTimer(0);
       resetGame(validLevelId);
       startGame(validLevelId);
@@ -73,7 +88,7 @@ export default function Game() {
         controlsRef.current.resetEngine(validLevelId);
       }
     }
-  }, [validLevelId, apiLoading, apiError, resetGame, resetTimer, startGame]);
+  }, [validLevelId, apiLoading, apiError, resetGame, resetTimer, startGame, levelConfig.worldWidth, levelConfig.bossArenaX]);
 
   // Handle Player Damage
   const handlePlayerDamage = useCallback(
@@ -209,6 +224,7 @@ export default function Game() {
         onPauseToggle={handlePauseToggle}
         activeCharacter={activeCharacter}
         onCharacterSwap={switchCharacter}
+        levelProgress={levelProgress}
       />
 
       {/* Main 2D Canvas Area */}
@@ -226,6 +242,7 @@ export default function Game() {
         onCharacterSwap={switchCharacter}
         onHealPlayer={healPlayer}
         onScoreBonus={addScore}
+        onProgressUpdate={setLevelProgress}
       />
 
       {/* Controls Overlay & Mobile Touch D-Pad */}
